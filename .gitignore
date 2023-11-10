@@ -19,3 +19,8 @@
 
 # Go workspace file
 go.work
+
+# Various temporary files
+*.json
+*.creds
+.env
