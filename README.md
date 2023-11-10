@@ -2,7 +2,7 @@
 
 Welcome to the [Data Layer SDK](https://github.com/SyntropyNet/data-layer-sdk) documentation. This SDK enables seamless integration with our Data Layer solution, allowing you to harness the power of real-time data streams in your Golang applications.
 
-[data-layer-sdk](https://github.com/SyntropyNet/data-layer-sdk) is a [Golang library](https://github.com/SyntropyNet/data-layer-sdk) designed specifically for the Syntropy Data Layer project. Powered by the NATS messaging system, `[data-layer-sdk](https://github.com/SyntropyNet/data-layer-sdk)` abstracts away most of the intricate details of interacting 
+[data-layer-sdk](https://github.com/SyntropyNet/data-layer-sdk) is a [Golang library](https://github.com/SyntropyNet/data-layer-sdk) designed specifically for the Syntropy Data Layer project. Powered by the NATS messaging system, [data-layer-sdk](https://github.com/SyntropyNet/data-layer-sdk) abstracts away most of the intricate details of interacting 
 with the Data Layer Broker network and the Blockchain to offer seamless integration between your Golang applications and the Syntropy Data Layer platform.
 
 # Features
