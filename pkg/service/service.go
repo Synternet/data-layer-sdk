@@ -74,6 +74,7 @@ func (b *Service) run() error {
 	for {
 		select {
 		case <-b.Context.Done():
+			log.Println("Message Publish loop Context closed")
 			return nil
 		case <-ticker.C:
 			b.reportTelemetry()
@@ -271,7 +272,12 @@ func (b *Service) PublishBufTo(buf []byte, suffixes ...string) error {
 	if err != nil {
 		return err
 	}
-	b.publishCh <- msg
+
+	select {
+	case <-b.Context.Done():
+		return b.Context.Err()
+	case b.publishCh <- msg:
+	}
 	return nil
 }
 
