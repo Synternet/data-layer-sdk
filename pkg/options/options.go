@@ -105,7 +105,7 @@ func (o *Options) setDefaults() {
 	o.Params = make(map[string]any)
 	o.KnownPublicKeys = make(map[string]ed25519.PublicKey)
 	o.Codec = codec.NewJsonCodec()
-	o.PublishQueueSize = 100
+	o.PublishQueueSize = 1000
 }
 
 func (o *Options) SetContext(ctxMain context.Context) {

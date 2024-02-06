@@ -132,6 +132,8 @@ func (b *Service) collectStatus() map[string]any {
 	status["uptime"] = time.Since(b.startTime).String()
 	status["period"] = time.Since(b.prevTelemetry).String()
 	status["goroutines"] = runtime.NumGoroutine()
+	status["publish_queue"] = len(b.publishCh)
+	status["publish_queue_cap"] = cap(b.publishCh)
 
 	return status
 }
