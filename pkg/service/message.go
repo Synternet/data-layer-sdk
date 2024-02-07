@@ -1,6 +1,7 @@
 package service
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -30,12 +31,14 @@ type MessageHandler func(msg Message)
 
 type natsMessage struct {
 	*nats.Msg
-	codec options.Codec
-	make  func([]byte, string) (*nats.Msg, error)
+	codec        options.Codec
+	msgCounter   *atomic.Uint64
+	bytesCounter *atomic.Uint64
+	make         func([]byte, string) (*nats.Msg, error)
 }
 
-func wrapMessage(codec options.Codec, maker func([]byte, string) (*nats.Msg, error), msg *nats.Msg) *natsMessage {
-	return &natsMessage{Msg: msg, codec: codec, make: maker}
+func wrapMessage(codec options.Codec, msgCounter, bytesCounter *atomic.Uint64, maker func([]byte, string) (*nats.Msg, error), msg *nats.Msg) *natsMessage {
+	return &natsMessage{Msg: msg, codec: codec, make: maker, msgCounter: msgCounter, bytesCounter: bytesCounter}
 }
 
 func (m natsMessage) Equal(msg Message) bool {
@@ -57,7 +60,10 @@ func (m natsMessage) Respond(msg any) error {
 		return err
 	}
 
-	return m.RespondMsg(nmsg)
+	err = m.RespondMsg(nmsg)
+	m.msgCounter.Add(1)
+	m.bytesCounter.Add(uint64(len(nmsg.Data)))
+	return err
 }
 
 func (m natsMessage) Subject() string {

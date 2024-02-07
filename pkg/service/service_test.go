@@ -2,6 +2,7 @@ package service
 
 import (
 	"reflect"
+	"sync/atomic"
 	"testing"
 
 	"github.com/nats-io/nats.go"
@@ -31,7 +32,12 @@ func TestBase_MakeMsgVerify(t *testing.T) {
 		t.Fail()
 	}
 
-	wrapped := wrapMessage(publisher.Codec, publisher.makeMsg, msg)
+	var (
+		msg_out_counter   atomic.Uint64
+		bytes_out_counter atomic.Uint64
+	)
+
+	wrapped := wrapMessage(publisher.Codec, &msg_out_counter, &bytes_out_counter, publisher.makeMsg, msg)
 	err = publisher.Verify(wrapped)
 	if err != nil {
 		t.Error("failure: ", err.Error())
@@ -195,7 +201,13 @@ func TestBase_Verify(t *testing.T) {
 				WithKnownIdentities(tt.peers...),
 			)
 			msg := tt.makeMsg(t, b)
-			wrapped := wrapMessage(b.Codec, b.makeMsg, msg)
+
+			var (
+				msg_out_counter   atomic.Uint64
+				bytes_out_counter atomic.Uint64
+			)
+
+			wrapped := wrapMessage(b.Codec, &msg_out_counter, &bytes_out_counter, b.makeMsg, msg)
 			if err := b.Verify(wrapped); (err != nil) != tt.wantErr {
 				t.Errorf("Base.Verify() error = %v, wantErr %v", err, tt.wantErr)
 			}

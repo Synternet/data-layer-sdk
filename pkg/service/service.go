@@ -30,14 +30,16 @@ type StatusFunc func() map[string]any
 // properly set it up.
 type Service struct {
 	options.Options
-	mu              sync.Mutex
-	startTime       time.Time
-	prevTelemetry   time.Time
-	publishCh       chan *nats.Msg // This is out of bounds publish channel
-	nonce           atomic.Uint64
-	msg_in_counter  atomic.Uint64
-	msg_out_counter atomic.Uint64
-	statusCallback  map[uintptr]StatusFunc
+	mu                sync.Mutex
+	startTime         time.Time
+	prevTelemetry     time.Time
+	publishCh         chan *nats.Msg // This is out of bounds publish channel
+	nonce             atomic.Uint64
+	msg_in_counter    atomic.Uint64
+	msg_out_counter   atomic.Uint64
+	bytes_in_counter  atomic.Uint64
+	bytes_out_counter atomic.Uint64
+	statusCallback    map[uintptr]StatusFunc
 }
 
 // Configure must be called by the publisher implementation.
@@ -87,6 +89,7 @@ func (b *Service) run() error {
 			}
 			b.PubNats.PublishMsg(msg)
 			b.msg_out_counter.Add(1)
+			b.bytes_out_counter.Add(uint64(len(msg.Data)))
 		}
 	}
 }
@@ -140,6 +143,8 @@ func (b *Service) collectStatus() map[string]any {
 		"out_queue_cap": cap(b.publishCh),
 		"in":            b.msg_in_counter.Swap(0),
 		"out":           b.msg_out_counter.Swap(0),
+		"bytes_in":      b.bytes_in_counter.Swap(0),
+		"bytes_out":     b.bytes_out_counter.Swap(0),
 	}
 
 	return status
@@ -162,7 +167,8 @@ func (b *Service) SubscribeTo(handler MessageHandler, suffixes ...string) (*nats
 	}
 	natsHandler := func(msg *nats.Msg) {
 		b.msg_in_counter.Add(1)
-		wrapped := wrapMessage(b.Codec, b.makeMsg, msg)
+		b.bytes_in_counter.Add(uint64(len(msg.Data)))
+		wrapped := wrapMessage(b.Codec, &b.msg_out_counter, &b.bytes_out_counter, b.makeMsg, msg)
 		handler(wrapped)
 	}
 
