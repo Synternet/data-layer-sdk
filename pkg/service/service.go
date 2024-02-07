@@ -30,12 +30,14 @@ type StatusFunc func() map[string]any
 // properly set it up.
 type Service struct {
 	options.Options
-	mu             sync.Mutex
-	startTime      time.Time
-	prevTelemetry  time.Time
-	publishCh      chan *nats.Msg // This is out of bounds publish channel
-	counter        atomic.Uint64
-	statusCallback map[uintptr]StatusFunc
+	mu              sync.Mutex
+	startTime       time.Time
+	prevTelemetry   time.Time
+	publishCh       chan *nats.Msg // This is out of bounds publish channel
+	nonce           atomic.Uint64
+	msg_in_counter  atomic.Uint64
+	msg_out_counter atomic.Uint64
+	statusCallback  map[uintptr]StatusFunc
 }
 
 // Configure must be called by the publisher implementation.
@@ -84,6 +86,7 @@ func (b *Service) run() error {
 				continue
 			}
 			b.PubNats.PublishMsg(msg)
+			b.msg_out_counter.Add(1)
 		}
 	}
 }
@@ -132,8 +135,12 @@ func (b *Service) collectStatus() map[string]any {
 	status["uptime"] = time.Since(b.startTime).String()
 	status["period"] = time.Since(b.prevTelemetry).String()
 	status["goroutines"] = runtime.NumGoroutine()
-	status["publish_queue"] = len(b.publishCh)
-	status["publish_queue_cap"] = cap(b.publishCh)
+	status["messages"] = map[string]any{
+		"out_queue":     len(b.publishCh),
+		"out_queue_cap": cap(b.publishCh),
+		"in":            b.msg_in_counter.Swap(0),
+		"out":           b.msg_out_counter.Swap(0),
+	}
 
 	return status
 }
@@ -154,6 +161,7 @@ func (b *Service) SubscribeTo(handler MessageHandler, suffixes ...string) (*nats
 		log.Println("SubscribeTo", strings.Join(suffixes, "."))
 	}
 	natsHandler := func(msg *nats.Msg) {
+		b.msg_in_counter.Add(1)
 		wrapped := wrapMessage(b.Codec, b.makeMsg, msg)
 		handler(wrapped)
 	}
@@ -277,6 +285,7 @@ func (b *Service) PublishBufTo(buf []byte, suffixes ...string) error {
 
 	select {
 	case <-b.Context.Done():
+		log.Printf("PublishBufTo cancelled: err=%v queue_size=%d", b.Context.Err(), len(b.publishCh))
 		return b.Context.Err()
 	case b.publishCh <- msg:
 	}

@@ -31,7 +31,7 @@ func (b *Service) handleTelemetryPing(nmsg Message) {
 }
 
 func (b *Service) reportTelemetry() {
-	nonce := b.counter.Add(1)
+	nonce := b.nonce.Add(1)
 	now := time.Now()
 	b.Publish(
 		&Telemetry{
