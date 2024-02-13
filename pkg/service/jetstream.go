@@ -35,7 +35,6 @@ func (b *Service) jsConsumerName(hash string) string {
 // Stream names must be explicit(no pattern matching) and must belong to only one stream.
 //
 // The interface for this feature is experimental and it should be expected to change.
-// It is possible to group a few subjects together
 //
 // NOTE: Messages are automatically acknowledged after handler returns.
 func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subjects ...string) error {
