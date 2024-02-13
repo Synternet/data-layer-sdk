@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/cosmos/btcutil/base58"
-	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
 )
@@ -34,18 +33,15 @@ func WithContext(ctx context.Context) options.Option {
 }
 
 // WithNats sets up preconfigured NATS connector for publishing and subscribing.
-func WithNats(nc *nats.Conn) options.Option {
+func WithNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
-		if nc == nil {
-			return
-		}
-		o.PubNats = nc
-		o.SubNats = nc
+		WithPubNats(nc)(o)
+		WithSubNats(nc)(o)
 	}
 }
 
 // WithPubNats sets up preconfigured NATS connector specifically for publishing.
-func WithPubNats(nc *nats.Conn) options.Option {
+func WithPubNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
 		if nc == nil {
 			return
@@ -55,7 +51,7 @@ func WithPubNats(nc *nats.Conn) options.Option {
 }
 
 // WithSubNats sets up preconfigured NATS connector speficivally for subscribing.
-func WithSubNats(nc *nats.Conn) options.Option {
+func WithSubNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
 		if nc == nil {
 			return
