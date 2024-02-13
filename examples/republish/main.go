@@ -7,20 +7,22 @@ import (
 	"os"
 	"os/signal"
 
+	_ "github.com/syntropynet/data-layer-sdk/pkg/dotenv"
+
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
 	"github.com/syntropynet/data-layer-sdk/pkg/service"
 )
 
 func main() {
-	urls := flag.String("urls", "", "NATS urls")
+	urls := flag.String("urls", os.Getenv("NATS_URL"), "NATS urls")
 	prefix := flag.String("prefix", "syntropy", "Subject prefix. The subject will be {prefix}.my_publisher")
 	source := flag.String("source", "syntropy.ethereum.tx", "Source Subject republish messages from.")
-	creds := flag.String("nats-creds", "", "NATS credentials file")
-	nkey := flag.String("nats-nkey", "", "NATS NKey string")
-	jwt := flag.String("nats-jwt", "", "NATS JWT string")
-	credsPub := flag.String("nats-creds-pub", "", "NATS credentials file for publishing")
-	nkeyPub := flag.String("nats-nkey-pub", "", "NATS NKey string for publishing")
-	jwtPub := flag.String("nats-jwt-pub", "", "NATS JWT string for publishing")
+	creds := flag.String("nats-creds", os.Getenv("NATS_CREDS"), "NATS credentials file")
+	nkey := flag.String("nats-nkey", os.Getenv("NATS_NKEY"), "NATS NKey string")
+	jwt := flag.String("nats-jwt", os.Getenv("NATS_JWT"), "NATS JWT string")
+	credsPub := flag.String("nats-creds-pub", os.Getenv("NATS_PUB_CREDS"), "NATS credentials file for publishing")
+	nkeyPub := flag.String("nats-nkey-pub", os.Getenv("NATS_PUB_NKEY"), "NATS NKey string for publishing")
+	jwtPub := flag.String("nats-jwt-pub", os.Getenv("NATS_PUB_JWT"), "NATS JWT string for publishing")
 	verbose := flag.Bool("verbose", false, "Verbose logs")
 
 	flag.Parse()

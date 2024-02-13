@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
 	"github.com/syntropynet/data-layer-sdk/pkg/service"
@@ -27,7 +28,15 @@ func New(o ...options.Option) (*Publisher, error) {
 		Service: &service.Service{},
 	}
 
-	ret.Service.Configure(o...)
+	err := ret.Service.Configure(o...)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ret.AddStream(10, 10240, time.Hour*24, options.Param(ret.Options, SourceParam, ""))
+	if err != nil {
+		return nil, err
+	}
 
 	return ret, nil
 }
@@ -50,10 +59,11 @@ func (p *Publisher) subscribe() error {
 	if _, err := p.SubscribeTo(p.handleQuery, src); err != nil {
 		return err
 	}
-	p.PubNats.Flush()
 
 	return nil
 }
+
+var cnt = 0
 
 func (p *Publisher) handleQuery(nmsg service.Message) {
 	fmt.Println("---", nmsg.Subject())
@@ -62,7 +72,7 @@ func (p *Publisher) handleQuery(nmsg service.Message) {
 	}
 	fmt.Println()
 
-	fmt.Println(nmsg.Data())
+	fmt.Println(string(nmsg.Data()))
 	fmt.Println()
 	fmt.Println()
 }

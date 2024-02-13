@@ -7,16 +7,18 @@ import (
 	"os"
 	"os/signal"
 
+	_ "github.com/syntropynet/data-layer-sdk/pkg/dotenv"
+
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
 	"github.com/syntropynet/data-layer-sdk/pkg/service"
 )
 
 func main() {
-	urls := flag.String("urls", "", "NATS urls")
+	urls := flag.String("urls", os.Getenv("NATS_URL"), "NATS urls")
 	source := flag.String("source", "syntropy_defi.price.single.ATOM", "Source Subject to stream from.")
-	creds := flag.String("nats-creds", "", "NATS credentials file")
-	nkey := flag.String("nats-nkey", "", "NATS NKey string")
-	jwt := flag.String("nats-jwt", "", "NATS JWT string")
+	creds := flag.String("nats-creds", os.Getenv("NATS_CREDS"), "NATS credentials file")
+	nkey := flag.String("nats-nkey", os.Getenv("NATS_NKEY"), "NATS NKey string")
+	jwt := flag.String("nats-jwt", os.Getenv("NATS_JWT"), "NATS JWT string")
 	verbose := flag.Bool("verbose", false, "Verbose logs")
 
 	flag.Parse()

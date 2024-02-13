@@ -32,7 +32,8 @@ type JetStreamer interface {
 var _ JetStreamer = &nats.Conn{}
 
 type jsStream struct {
-	cfg          *nats.StreamConfig
+	cfgStream    *nats.StreamConfig
+	cfgConsumer  *nats.ConsumerConfig
 	streamInfo   *nats.StreamInfo
 	consumerInfo *nats.ConsumerInfo
 }
@@ -86,7 +87,8 @@ func (b *Service) Configure(opts ...options.Option) error {
 	}
 
 	if js, ok := b.SubNats.(JetStreamer); ok {
-		b.js, err = js.JetStream()
+		b.js, err = js.JetStream(nats.Context(b.Context))
+		b.streamSubjects = make(map[string]int)
 	}
 	return nil
 }
