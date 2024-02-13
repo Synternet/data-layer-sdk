@@ -14,7 +14,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-var ErrNotAvailable = fmt.Errorf("Not available")
+var ErrNotAvailable = fmt.Errorf("not available")
 
 func (b *Service) jsMakeHash(subjects ...string) string {
 	sum := sha256.Sum256([]byte(strings.Join(subjects, ",")))
@@ -29,10 +29,13 @@ func (b *Service) jsConsumerName(hash string) string {
 	return fmt.Sprintf("%s-%s-%s", b.Identity, b.Name, hash)
 }
 
-// AddStream is an experimental feature that creates JetStream stream and durable consumer.
-// The interface for this feature is experimental and it should be expected to change.
-//
+// AddStream is an experimental feature that creates a durable stream. It is possible to
+// subscribe to this durable stream using regular Subscribe or SubscribeTo methods given that
+// the subject is included in the created stream.
 // Stream names must be explicit(no pattern matching) and must belong to only one stream.
+//
+// The interface for this feature is experimental and it should be expected to change.
+// It is possible to group a few subjects together
 //
 // NOTE: Messages are automatically acknowledged after handler returns.
 func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subjects ...string) error {
@@ -72,8 +75,8 @@ func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subject
 	}
 
 	ccfg := &nats.ConsumerConfig{
-		Durable: b.jsConsumerName(hash),
-		// AckPolicy:     nats.AckExplicitPolicy,
+		Durable:       b.jsConsumerName(hash),
+		AckPolicy:     nats.AckExplicitPolicy,
 		DeliverPolicy: nats.DeliverAllPolicy,
 	}
 	ci, err := b.js.AddConsumer(streamName, ccfg)
@@ -125,14 +128,29 @@ func (b *Service) RemoveStream(subjects ...string) error {
 		return fmt.Errorf("DeleteStream failed: %w", err)
 	}
 
+	b.removeStreamsFromMap(subjects)
+
+	return nil
+}
+
+func (b *Service) removeStreamsFromMap(subjects []string) {
+	idsToDeleteSet := make(map[int]struct{}, len(subjects))
 	for _, s := range subjects {
 		if ssIdx, ok := b.streamSubjects[s]; ok {
 			delete(b.streamSubjects, s)
-			b.streams = slices.Delete(b.streams, ssIdx, ssIdx)
+			idsToDeleteSet[ssIdx] = struct{}{}
 		}
 	}
 
-	return nil
+	idsToDelete := make([]int, 0, len(idsToDeleteSet))
+	for id := range idsToDelete {
+		idsToDelete = append(idsToDelete, id)
+	}
+	slices.SortFunc(idsToDelete, func(a, b int) int { return b - a })
+
+	for id := range idsToDelete {
+		b.streams = slices.Delete(b.streams, id, id+1)
+	}
 }
 
 func (b *Service) attemptJSConsume(handler nats.MsgHandler, subject string) (*nats.Subscription, error) {
@@ -177,15 +195,15 @@ func (b *Service) attemptJSConsume(handler nats.MsgHandler, subject string) (*na
 					continue
 				}
 				if errors.Is(err, nats.ErrBadSubscription) {
-					log.Printf("Subscription to %s closed", subject)
+					log.Printf("subscription to %s closed", subject)
 					return nil
 				}
-				return fmt.Errorf("Error during pulling next message: %w", err)
+				return fmt.Errorf("pulling message failed: %w", err)
 			}
 			for _, msg := range msgs {
 				handler(msg)
 				if err := msg.Ack(); err != nil {
-					log.Println("Error during message ack: ", err)
+					log.Println("message ack failed: ", err)
 				}
 			}
 		}
