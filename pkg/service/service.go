@@ -25,6 +25,19 @@ import (
 // "uptime", "goroutines", "period" keys will be overriden internally.
 type StatusFunc func() map[string]any
 
+type JetStreamer interface {
+	JetStream(opts ...nats.JSOpt) (nats.JetStreamContext, error)
+}
+
+var _ JetStreamer = &nats.Conn{}
+
+type jsStream struct {
+	cfgStream    *nats.StreamConfig
+	cfgConsumer  *nats.ConsumerConfig
+	streamInfo   *nats.StreamInfo
+	consumerInfo *nats.ConsumerInfo
+}
+
 // Service is the base publisher structure. It must be embedded in the publisher to benefit from the
 // common implementation. Config method must be called on this embedded struct in order to
 // properly set it up.
@@ -40,6 +53,11 @@ type Service struct {
 	bytes_in_counter  atomic.Uint64
 	bytes_out_counter atomic.Uint64
 	statusCallback    map[uintptr]StatusFunc
+
+	// Experimental feature
+	js             nats.JetStreamContext
+	streams        []jsStream
+	streamSubjects SubjectMap
 }
 
 // Configure must be called by the publisher implementation.
@@ -63,6 +81,19 @@ func (b *Service) Configure(opts ...options.Option) error {
 	}
 	b.Identity = base58.Encode(pubkey)
 	log.Println("Identity: ", b.Identity)
+
+	if b.SubNats == nil {
+		return nil
+	}
+
+	if js, ok := b.SubNats.(JetStreamer); ok {
+		b.js, err = js.JetStream(nats.Context(b.Context))
+		if err != nil {
+			log.Printf("JetStream failed: %v", err)
+			return nil
+		}
+		b.streamSubjects = make(SubjectMap)
+	}
 	return nil
 }
 
@@ -158,6 +189,8 @@ func (b *Service) Subscribe(handler MessageHandler, suffixes ...string) (*nats.S
 
 // SubscribeTo will subscribe to a subject constructed {...suffixes}, where
 // suffixes are joined using ".".
+//
+// Experimental: When a stream was registered with AddStream SubscribeTo will use durable stream instead of realtime.
 func (b *Service) SubscribeTo(handler MessageHandler, suffixes ...string) (*nats.Subscription, error) {
 	if b.SubNats == nil {
 		return nil, fmt.Errorf("subscribing NATS connection is nil")
@@ -172,10 +205,16 @@ func (b *Service) SubscribeTo(handler MessageHandler, suffixes ...string) (*nats
 		handler(wrapped)
 	}
 
-	if b.QueueName != "" {
-		return b.SubNats.QueueSubscribe(strings.Join(suffixes, "."), b.QueueName, natsHandler)
+	subject := strings.Join(suffixes, ".")
+
+	if sub, err := b.attemptJSConsume(natsHandler, subject); err == nil {
+		return sub, nil
 	}
-	return b.SubNats.Subscribe(strings.Join(suffixes, "."), natsHandler)
+
+	if b.QueueName != "" {
+		return b.SubNats.QueueSubscribe(subject, b.QueueName, natsHandler)
+	}
+	return b.SubNats.Subscribe(subject, natsHandler)
 }
 
 // Close should be closed to clean-up the publisher.
