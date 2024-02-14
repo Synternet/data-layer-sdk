@@ -29,6 +29,9 @@ func WithParam(key string, val any) options.Option {
 // WithLogger sets the logger for the publisher.
 func WithLogger(logger *slog.Logger) options.Option {
 	return func(o *options.Options) {
+		if logger == nil {
+			panic(errors.New("logger must not be nil"))
+		}
 		o.Logger = logger
 	}
 }
