@@ -57,7 +57,7 @@ type Service struct {
 	// Experimental feature
 	js             nats.JetStreamContext
 	streams        []jsStream
-	streamSubjects map[string]int
+	streamSubjects SubjectMap
 }
 
 // Configure must be called by the publisher implementation.
@@ -88,7 +88,11 @@ func (b *Service) Configure(opts ...options.Option) error {
 
 	if js, ok := b.SubNats.(JetStreamer); ok {
 		b.js, err = js.JetStream(nats.Context(b.Context))
-		b.streamSubjects = make(map[string]int)
+		if err != nil {
+			log.Printf("JetStream failed: %v", err)
+			return nil
+		}
+		b.streamSubjects = make(SubjectMap)
 	}
 	return nil
 }

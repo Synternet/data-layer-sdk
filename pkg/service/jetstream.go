@@ -45,13 +45,21 @@ func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subject
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	for _, s := range subjects {
-		if strings.ContainsAny(s, ">*") {
-			return fmt.Errorf("%s unsupported", s)
+	for i, subject := range subjects {
+		s := Subject(subject)
+
+		if err := Subject(s).Validate(); err != nil {
+			return fmt.Errorf("%s validation failed: %w", s, err)
 		}
 
-		if _, ok := b.streamSubjects[s]; ok {
-			return fmt.Errorf("%s already configured", s)
+		if match, _, found := b.streamSubjects.SymmetricSearch(s); found {
+			return fmt.Errorf("%s already configured as %s", s, match)
+		}
+
+		for _, s1 := range subjects[i+1:] {
+			if s.SymmetricMatch(Subject(s1)) {
+				return fmt.Errorf("overlapping subjects: %s and %s", s, s1)
+			}
 		}
 	}
 
@@ -94,7 +102,7 @@ func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subject
 	})
 
 	for _, s := range subjects {
-		b.streamSubjects[s] = len(b.streams) - 1
+		b.streamSubjects.Add(Subject(s), len(b.streams)-1)
 	}
 
 	return nil
@@ -134,8 +142,9 @@ func (b *Service) RemoveStream(subjects ...string) error {
 
 func (b *Service) removeStreamsFromMap(subjects []string) {
 	idsToDeleteSet := make(map[int]struct{}, len(subjects))
-	for _, s := range subjects {
-		if ssIdx, ok := b.streamSubjects[s]; ok {
+	for _, subject := range subjects {
+		s := Subject(subject)
+		if ssIdx, ok := b.streamSubjects.Get(s); ok {
 			delete(b.streamSubjects, s)
 			idsToDeleteSet[ssIdx] = struct{}{}
 		}
@@ -159,7 +168,7 @@ func (b *Service) attemptJSConsume(handler nats.MsgHandler, subject string) (*na
 
 	var info jsStream
 	streamName, consumerName := "", ""
-	if id, ok := b.streamSubjects[subject]; !ok {
+	if _, id, ok := b.streamSubjects.Search(Subject(subject)); !ok {
 		return nil, ErrNotAvailable
 	} else {
 		info = b.streams[id]
