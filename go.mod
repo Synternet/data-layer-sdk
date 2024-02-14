@@ -1,6 +1,6 @@
 module github.com/syntropynet/data-layer-sdk
 
-go 1.20
+go 1.21
 
 require (
 	github.com/cosmos/btcutil v1.0.5
