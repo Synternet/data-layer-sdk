@@ -32,7 +32,6 @@ func (b *Service) jsConsumerName(hash string) string {
 // AddStream is an experimental feature that creates a durable stream. It is possible to
 // subscribe to this durable stream using regular Subscribe or SubscribeTo methods given that
 // the subject is included in the created stream.
-// Stream names must be explicit(no pattern matching) and must belong to only one stream.
 //
 // The interface for this feature is experimental and it should be expected to change.
 //
