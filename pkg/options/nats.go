@@ -2,7 +2,7 @@ package options
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/nats-io/nats.go"
 )
@@ -10,7 +10,7 @@ import (
 // MakeNats is a convenience function to create NATS connection from various parameters.
 func MakeNats(name, urls, userCreds, nkey, jwt, caCert, clientCert, clientKey string) (*nats.Conn, error) {
 	if urls == "" {
-		log.Println("Will use NATS stub")
+		slog.Info("Will use NATS stub")
 		return nil, nil
 	}
 

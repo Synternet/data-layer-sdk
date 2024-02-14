@@ -1,7 +1,6 @@
 package service
 
 import (
-	"log"
 	"strconv"
 	"time"
 )
@@ -11,13 +10,13 @@ func (b *Service) handleTelemetryPing(nmsg Message) {
 	var ping TelemetryPing
 	_, err := b.Unmarshal(nmsg, &ping)
 	if err != nil {
-		log.Println("ERR: ping: ", err.Error())
+		b.Logger.Error("ping", err)
 		return
 	}
 
 	timestamp, err := strconv.ParseInt(ping.Timestamp, 10, 64)
 	if err != nil {
-		log.Println("ERR: not a number in timestamp")
+		b.Logger.Error("not a number in timestamp", err)
 		return
 	}
 

@@ -3,7 +3,7 @@ package dotenv
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -11,8 +11,8 @@ import (
 
 func init() {
 	if err := godotenv.Load(); err == nil {
-		log.Println(".env file detected.")
+		slog.Info(".env file detected.")
 	} else if !errors.Is(err, os.ErrNotExist) {
-		log.Println(".env file failed: ", err.Error())
+		slog.Warn(".env file failed: ", err)
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"slices"
 	"strings"
 	"time"
@@ -176,8 +175,9 @@ func (b *Service) attemptJSConsume(handler nats.MsgHandler, subject string) (*na
 	}
 
 	b.Group.Go(func() error {
-		log.Println("PullSubscribe loop start: ", subject)
-		defer log.Println("PullSubscribe loop exit: ", subject)
+		b.Logger.Info("PullSubscribe loop start", "subject", subject)
+		defer b.Logger.Info("PullSubscribe loop exit", "subject", subject)
+
 		for {
 			select {
 			case <-b.Context.Done():
@@ -197,7 +197,7 @@ func (b *Service) attemptJSConsume(handler nats.MsgHandler, subject string) (*na
 					continue
 				}
 				if errors.Is(err, nats.ErrBadSubscription) {
-					log.Printf("subscription to %s closed", subject)
+					b.Logger.Info("subscription closed", "subject", subject)
 					return nil
 				}
 				return fmt.Errorf("pulling message failed: %w", err)
@@ -205,7 +205,7 @@ func (b *Service) attemptJSConsume(handler nats.MsgHandler, subject string) (*na
 			for _, msg := range msgs {
 				handler(msg)
 				if err := msg.Ack(); err != nil {
-					log.Println("message ack failed: ", err)
+					b.Logger.Warn("message ack failed", err)
 				}
 			}
 		}

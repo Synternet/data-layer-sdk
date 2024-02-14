@@ -7,8 +7,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -22,6 +23,13 @@ import (
 func WithParam(key string, val any) options.Option {
 	return func(o *options.Options) {
 		o.Params[key] = val
+	}
+}
+
+// WithLogger sets the logger for the publisher.
+func WithLogger(logger *slog.Logger) options.Option {
+	return func(o *options.Options) {
+		o.Logger = logger
 	}
 }
 
@@ -65,7 +73,7 @@ func WithSubNats(nc options.NatsConn) options.Option {
 func WithName(name string) options.Option {
 	return func(o *options.Options) {
 		if name == "" {
-			log.Fatal("name must be provided")
+			panic(errors.New("name must be provided"))
 		}
 		o.Name = name
 	}
@@ -89,10 +97,10 @@ func WithPrivateKey(pkey crypto.PrivateKey) options.Option {
 			return
 		}
 		if _, ok := pkey.(crypto.Signer); !ok {
-			log.Fatal(errors.New("private key must implement Signer interface"))
+			panic(errors.New("private key must implement Signer interface"))
 		}
 		if _, ok := pkey.(ed25519.PrivateKey); !ok {
-			log.Fatal(errors.New("private key must be ED25519"))
+			panic(errors.New("private key must be ED25519"))
 		}
 		o.PrivateKey = pkey
 	}
@@ -107,29 +115,29 @@ func WithPemPrivateKey(keyFile string) options.Option {
 
 		privateKey, err := os.ReadFile(keyFile)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 
 		if len(privateKey) > 1024 {
-			log.Fatal(errors.New("private key exceeds 1 KB"))
+			panic(errors.New("private key exceeds 1 KB"))
 		}
 		if !strings.HasPrefix(string(privateKey), "-----BEGIN PRIVATE KEY-----") {
-			log.Fatal(errors.New("does not contain private key section"))
+			panic(errors.New("does not contain private key section"))
 		}
 
 		var block *pem.Block
 		if block, _ = pem.Decode(privateKey); block == nil {
-			log.Fatal(errors.New("not a valid pem private key"))
+			panic(errors.New("not a valid pem private key"))
 		}
 
 		// Parse the key
 		parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		pkey, ok := parsedKey.(ed25519.PrivateKey)
 		if !ok {
-			log.Fatal(errors.New("private key must be ed25519 key"))
+			panic(errors.New("private key must be ed25519 key"))
 		}
 
 		WithPrivateKey(pkey)(o)
@@ -144,12 +152,12 @@ func WithUserCreds(path string) options.Option {
 		}
 		f, err := os.Open(path)
 		if err != nil {
-			log.Fatalln("credentials file:", err.Error())
+			panic(fmt.Errorf("credentials file: %w", err))
 		}
 		defer f.Close()
 		contents, err := io.ReadAll(f)
 		if err != nil {
-			log.Fatalln("credentials file:", err.Error())
+			panic(fmt.Errorf("credentials file: %w", err))
 		}
 		WithNKeySeed(string(contents))(o)
 	}
@@ -163,19 +171,19 @@ func WithNKeySeed(contents string) options.Option {
 	return func(o *options.Options) {
 		key, err := nkeys.ParseDecoratedNKey([]byte(contents))
 		if err != nil {
-			log.Fatalln("credentials nkey:", err.Error())
+			panic(fmt.Errorf("credentials nkey: %w", err))
 		}
 		npkey, err := key.PrivateKey()
 		if err != nil {
-			log.Fatalln("credentials private key:", err.Error())
+			panic(fmt.Errorf("credentials private key: %w", err))
 		}
 
 		pkey, err := nkeys.Decode(nkeys.PrefixBytePrivate, []byte(npkey))
 		if err != nil {
-			log.Fatalln("nkey decode:", err.Error(), "nkey:", npkey)
+			panic(fmt.Errorf("nkey decode: %w nkey=%s", err, npkey))
 		}
 		if len(pkey) != ed25519.PrivateKeySize {
-			log.Fatalln("NKey: key size mismatch: ", len(pkey), ed25519.PrivateKeySize)
+			panic(fmt.Errorf("NKey: key size mismatch: %d != %d", len(pkey), ed25519.PrivateKeySize))
 		}
 		o.PrivateKey = ed25519.PrivateKey(pkey)
 	}
