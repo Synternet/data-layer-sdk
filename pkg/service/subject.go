@@ -23,6 +23,11 @@ func (s Subject) Validate() error {
 	if strings.ContainsAny(s.String(), ",? \r\n\t$\b") {
 		return fmt.Errorf("invalid subject: %s", s.String())
 	}
+	for _, token := range s.Tokens() {
+		if token == "" {
+			return fmt.Errorf("empty token: %s", s.String())
+		}
+	}
 	return nil
 }
 
@@ -44,7 +49,7 @@ func (s Subject) Match(subject Subject) bool {
 		}
 	}
 
-	return len(pTokens) == len(sTokens) || pTokens[len(pTokens)-1] == "*"
+	return len(pTokens) == len(sTokens)
 }
 
 // SymmetricMatch tries to pattern-match a subject against another subject in both directions.

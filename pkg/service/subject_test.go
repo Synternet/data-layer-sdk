@@ -22,6 +22,7 @@ func TestSubject_Validate(t *testing.T) {
 	}{
 		{"good", Subject("a.*.c.>"), false},
 		{"bad?", Subject("a.?"), true},
+		{"empty token", Subject("a."), true},
 		{"bad,", Subject("a.,s"), true},
 		{"bad whitespace", Subject("hellow world"), true},
 		{"bad whitespace1", Subject("hellow. world"), true},
@@ -44,9 +45,14 @@ func TestSubject_Match(t *testing.T) {
 		subject Subject
 		want    bool
 	}{
+		{"longer", Subject("a.b"), Subject("a.b.c"), false},
+		{"shorter", Subject("a.b"), Subject("a"), false},
+		{"shorter *", Subject("a.b.*"), Subject("a.b"), false},
+		{"even longer", Subject("a.b.*"), Subject("a.b.c.d"), false},
 		{"exact", Subject("a.b"), Subject("a.b"), true},
 		{"false", Subject("a.b"), Subject("a.c"), false},
 		{"all exact", Subject("a.b.>"), Subject("a.b.>"), true},
+		{"all longer", Subject("a.b.>"), Subject("a.b.c.d.e"), true},
 		{"all subj reverse", Subject("a.b.c"), Subject("a.b.>"), false},
 		{"all almost reverse", Subject("a.b.*"), Subject("a.b.>"), true}, // NOTE: This is a weird case
 		{"all almost", Subject("a.b.>"), Subject("a.b.*"), true},
