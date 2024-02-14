@@ -6,7 +6,8 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"errors"
-	"log"
+	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -54,6 +55,7 @@ type Options struct {
 
 	// Include verbose logging
 	VerboseLog bool
+	Logger     *slog.Logger
 	// Determines how often to send telemetry messages.
 	TelemetryPeriod time.Duration
 
@@ -93,11 +95,12 @@ type Options struct {
 func (o *Options) setDefaults() {
 	_, pkey, err := ed25519.GenerateKey(nil)
 	if err != nil {
-		log.Fatal(err)
+		panic(fmt.Errorf("failed generating ed25519 key: %w", err))
 	}
+	o.Logger = slog.Default()
 	o.SetContext(context.Background())
-	o.PubNats = &natsStub{Verbose: &o.VerboseLog}
-	o.SubNats = &natsStub{Verbose: &o.VerboseLog}
+	o.PubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger}
+	o.SubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger}
 	o.PrivateKey = pkey
 	o.Prefix = "syntropy"
 	o.Name = "rnd"

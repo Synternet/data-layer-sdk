@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -80,7 +79,9 @@ func (b *Service) Configure(opts ...options.Option) error {
 		return fmt.Errorf("derived public key is not ED25519")
 	}
 	b.Identity = base58.Encode(pubkey)
-	log.Println("Identity: ", b.Identity)
+	defer func() {
+		b.Logger.Info("Service configured", "identity", b.Identity, "JetStream", b.js != nil)
+	}()
 
 	if b.SubNats == nil {
 		return nil
@@ -89,7 +90,7 @@ func (b *Service) Configure(opts ...options.Option) error {
 	if js, ok := b.SubNats.(JetStreamer); ok {
 		b.js, err = js.JetStream(nats.Context(b.Context))
 		if err != nil {
-			log.Printf("JetStream failed: %v", err)
+			b.Logger.Error("JetStream failed", err)
 			return nil
 		}
 		b.streamSubjects = make(SubjectMap)
@@ -109,13 +110,13 @@ func (b *Service) run() error {
 	for {
 		select {
 		case <-b.Context.Done():
-			log.Println("Message Publish loop Context closed")
+			b.Logger.Info("Message Publish loop Context closed", "err", b.Context.Err())
 			return nil
 		case <-ticker.C:
 			b.reportTelemetry()
 		case msg := <-b.publishCh:
 			if b.PubNats == nil {
-				log.Println("Messages are being published to nil NATS connection")
+				b.Logger.Warn("Messages are being published to nil NATS connection")
 				continue
 			}
 			b.PubNats.PublishMsg(msg)
@@ -196,7 +197,7 @@ func (b *Service) SubscribeTo(handler MessageHandler, suffixes ...string) (*nats
 		return nil, fmt.Errorf("subscribing NATS connection is nil")
 	}
 	if b.VerboseLog {
-		log.Println("SubscribeTo", strings.Join(suffixes, "."))
+		b.Logger.Debug("SubscribeTo", "suffixes", suffixes)
 	}
 	natsHandler := func(msg *nats.Msg) {
 		b.msg_in_counter.Add(1)
@@ -225,7 +226,7 @@ func (b *Service) Close() error {
 
 // Fail is a convenience function that allows to asynchronously propagate errors.
 func (b *Service) Fail(err error) {
-	log.Println("Publisher failed: ", err.Error())
+	b.Logger.Error("Publisher failed", err)
 	b.Cancel(err)
 }
 
@@ -330,7 +331,7 @@ func (b *Service) PublishBufTo(buf []byte, suffixes ...string) error {
 
 	select {
 	case <-b.Context.Done():
-		log.Printf("PublishBufTo cancelled: err=%v queue_size=%d", b.Context.Err(), len(b.publishCh))
+		b.Logger.Info("PublishBufTo cancelled", "err", b.Context.Err(), "queue_size", len(b.publishCh))
 		return b.Context.Err()
 	case b.publishCh <- msg:
 	}

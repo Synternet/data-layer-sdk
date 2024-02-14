@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 
@@ -25,7 +26,7 @@ func main() {
 
 	conn, err := options.MakeNats("Streaming consumer", *urls, *creds, *nkey, *jwt, "", "", "")
 	if err != nil {
-		log.Fatal("Failed creating NATS connection: ", err.Error())
+		panic(fmt.Errorf("Failed creating NATS connection: %w", err))
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -47,7 +48,7 @@ func main() {
 
 	publisher, err := New(opts...)
 	if err != nil {
-		log.Fatal("Failed creating the consumer: ", err.Error())
+		panic(fmt.Errorf("Failed creating the consumer: %w", err))
 	}
 
 	pubCtx := publisher.Start()
@@ -55,8 +56,8 @@ func main() {
 
 	select {
 	case <-ctx.Done():
-		log.Println("Shutdown")
+		slog.Info("Shutdown")
 	case <-pubCtx.Done():
-		log.Println("Service stopped with cause: ", context.Cause(pubCtx).Error())
+		slog.Info("Publisher stopped", "cause", context.Cause(pubCtx).Error())
 	}
 }

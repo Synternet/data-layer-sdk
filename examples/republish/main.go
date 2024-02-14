@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 
@@ -29,7 +30,7 @@ func main() {
 
 	conn, err := options.MakeNats("Republish Publisher", *urls, *creds, *nkey, *jwt, "", "", "")
 	if err != nil {
-		log.Fatal("Failed creating NATS connection: ", err.Error())
+		panic(fmt.Errorf("Failed creating NATS connection: %w", err))
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -47,7 +48,7 @@ func main() {
 	if *credsPub != "" || *nkeyPub != "" || *jwtPub != "" {
 		conn, err := options.MakeNats("Republish Publisher", *urls, *credsPub, *nkeyPub, *jwtPub, "", "", "")
 		if err != nil {
-			log.Fatal("Failed creating publishing NATS connection: ", err.Error())
+			panic(fmt.Errorf("Failed creating publishing NATS connection: %w", err))
 		}
 
 		// NOTE: Using publisher's side credentials for identity.
@@ -69,7 +70,7 @@ func main() {
 
 	publisher, err := New(opts...)
 	if err != nil {
-		log.Fatal("Failed creating the republisher: ", err.Error())
+		panic(fmt.Errorf("Failed creating the republisher: %w", err))
 	}
 
 	pubCtx := publisher.Start()
@@ -77,8 +78,8 @@ func main() {
 
 	select {
 	case <-ctx.Done():
-		log.Println("Shutdown")
+		slog.Info("Shutdown")
 	case <-pubCtx.Done():
-		log.Println("Publisher stopped with cause: ", context.Cause(pubCtx).Error())
+		slog.Info("Publisher stopped", "cause", context.Cause(pubCtx).Error())
 	}
 }
