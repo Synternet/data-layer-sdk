@@ -118,7 +118,6 @@ func (b *Service) RemoveStream(subjects ...string) error {
 
 	hash := b.jsMakeHash(subjects...)
 	streamName := b.jsStreamName(hash)
-	consumerName := b.jsConsumerName(hash)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -126,11 +125,7 @@ func (b *Service) RemoveStream(subjects ...string) error {
 	ctx, cancel := context.WithTimeout(b.Context, 30*time.Second)
 	defer cancel()
 
-	err := b.js.DeleteConsumer(streamName, consumerName, nats.Context(ctx))
-	if err != nil {
-		return fmt.Errorf("DeleteConsumer failed: %w", err)
-	}
-	err = b.js.DeleteStream(streamName, nats.Context(ctx))
+	err := b.js.DeleteStream(streamName, nats.Context(ctx))
 	if err != nil {
 		return fmt.Errorf("DeleteStream failed: %w", err)
 	}
