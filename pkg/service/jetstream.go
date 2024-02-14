@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/cosmos/btcutil/base58"
 	"github.com/nats-io/nats.go"
 )
 
@@ -17,7 +17,7 @@ var ErrNotAvailable = fmt.Errorf("not available")
 
 func (b *Service) jsMakeHash(subjects ...string) string {
 	sum := sha256.Sum256([]byte(strings.Join(subjects, ",")))
-	return base64.RawStdEncoding.EncodeToString(sum[:])
+	return base58.Encode(sum[:])
 }
 
 func (b *Service) jsStreamName(hash string) string {
