@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/cosmos/btcutil v1.0.5
 	github.com/joho/godotenv v1.5.1
+	github.com/nats-io/jwt v1.2.2
 	github.com/nats-io/nats.go v1.25.0
 	github.com/nats-io/nkeys v0.4.4
 	golang.org/x/sync v0.4.0
