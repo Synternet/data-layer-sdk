@@ -248,30 +248,6 @@ func (b *Service) makeMsg(payload []byte, subject string) (*nats.Msg, error) {
 	return result, nil
 }
 
-// GetStreamIdParts returns subject parts that are considered as a stream identifier.
-// For example, if you receive messages on `prefix.name.query.>`, then every subtopic in place of `>` will be
-// considered as a stream id. Suffixes argument in this case will be `query.>`.
-// In this example, GetStreamIdParts will return `query.part1.part2.part3` if the message was received on subject `prefix.name.query.part1.part2.part3`.
-func (b *Service) GetStreamIdParts(nmsg *nats.Msg, suffixes ...string) []string {
-	N := strings.Count(b.Subject(suffixes...), ".")
-	if N < 0 {
-		return nil
-	}
-	parts := strings.Split(nmsg.Subject, ".")
-	return parts[N-1:]
-}
-
-// GetStreamId will return the stream parts as well as joined stream id.
-// For example it will return (`[query, part1, part2, part3]`, `part1.part2.part3`) if the message was received on subject `prefix.name.query.part1.part2.part3`.
-func (b *Service) GetStreamId(nmsg *nats.Msg, suffixes ...string) ([]string, string) {
-	parts := b.GetStreamIdParts(nmsg, suffixes...)
-	if parts == nil {
-		return nil, ""
-	}
-	streamId := strings.Join(parts[1:], ".")
-	return parts, streamId
-}
-
 // Unmarshal is a convenience function that first verifies any signatures in the message and unmarshals bytes into a message.
 func (b *Service) Unmarshal(nmsg Message, msg any) (nats.Header, error) {
 	// TODO check signatures
@@ -302,21 +278,21 @@ func (b *Service) PublishTo(msg any, suffixes ...string) error {
 	return b.PublishBufTo(payload, suffixes...)
 }
 
-func (b *Service) Respond(msg *nats.Msg, buf []byte, suffixes ...string) error {
-	payload, err := b.Codec.Encode(nil, msg)
+func (b *Service) Respond(msg Message, buf []byte, suffixes ...string) error {
+	payload, err := b.Codec.Encode(nil, msg.Message())
 	if err != nil {
 		return err
 	}
 	return b.RespondBuf(msg, payload, suffixes...)
 }
 
-func (b *Service) RespondBuf(msg *nats.Msg, buf []byte, suffixes ...string) error {
-	msg, err := b.makeMsg(buf, strings.Join(suffixes, "."))
+func (b *Service) RespondBuf(msg Message, buf []byte, suffixes ...string) error {
+	reply, err := b.makeMsg(buf, strings.Join(suffixes, "."))
 	if err != nil {
 		return err
 	}
 
-	return msg.RespondMsg(msg)
+	return msg.Message().RespondMsg(reply)
 }
 
 // PublishBufTo will publish the raw bytes to a specific subject.
@@ -340,7 +316,7 @@ func (b *Service) PublishBufTo(buf []byte, suffixes ...string) error {
 
 // RequestFrom requests a reply or a stream from a subject using subscribing NATS connection.
 // This a synchronous operation that does not involve publisher queue.
-func (b *Service) RequestFrom(ctx context.Context, msg any, suffixes ...string) (*nats.Msg, error) {
+func (b *Service) RequestFrom(ctx context.Context, msg any, suffixes ...string) (Message, error) {
 	payload, err := b.Codec.Encode(nil, msg)
 	if err != nil {
 		return nil, err
@@ -350,7 +326,7 @@ func (b *Service) RequestFrom(ctx context.Context, msg any, suffixes ...string) 
 
 // RequestBufFrom requests a reply or a stream from a subject using subscribing NATS connection.
 // This a synchronous operation that does not involve publisher queue.
-func (b *Service) RequestBufFrom(ctx context.Context, buf []byte, suffixes ...string) (*nats.Msg, error) {
+func (b *Service) RequestBufFrom(ctx context.Context, buf []byte, suffixes ...string) (Message, error) {
 	if b.SubNats == nil {
 		return nil, fmt.Errorf("subscribing NATS connection is nil")
 	}
@@ -365,7 +341,7 @@ func (b *Service) RequestBufFrom(ctx context.Context, buf []byte, suffixes ...st
 		return nil, err
 	}
 
-	return ret, nil
+	return wrapMessage(b.Codec, &b.msg_out_counter, &b.bytes_out_counter, b.makeMsg, ret), nil
 }
 
 // Sign will sign the bytes.

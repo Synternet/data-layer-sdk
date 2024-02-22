@@ -18,6 +18,35 @@ func (s Subject) Tokens() []string {
 	return strings.Split(string(s), ".")
 }
 
+// RemainingTokens matches subject tokens until the end of subject tokens and returns the remaining tokens.
+func (s Subject) RemainingTokens(pattern []string) []string {
+	sTokens := s.Tokens()
+
+	if len(pattern) == 0 || len(sTokens) == 0 {
+		return sTokens
+	}
+
+	for j := range pattern {
+		if j >= len(sTokens) {
+			return sTokens[j:]
+		}
+		if pattern[j] == ">" {
+			return sTokens[j:]
+		}
+		if pattern[j] == "*" {
+			if j < len(pattern)-1 {
+				return sTokens[j:]
+			}
+			return sTokens[j : j+1]
+		}
+	}
+
+	if len(sTokens) > len(pattern) {
+		return sTokens[len(pattern):]
+	}
+	return nil
+}
+
 // Validate checks if the Subject contains any characters that are not allowed.
 func (s Subject) Validate() error {
 	if strings.ContainsAny(s.String(), ",? \r\n\t$\b") {

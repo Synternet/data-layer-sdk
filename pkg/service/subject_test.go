@@ -96,3 +96,56 @@ func TestSubject_SymmetricMatch(t *testing.T) {
 		})
 	}
 }
+
+func TestSubject_RemainingTokens(t *testing.T) {
+	tests := []struct {
+		name    string
+		s       Subject
+		pattern []string
+		want    []string
+	}{
+		{
+			"simple",
+			Subject("a.b.c.d"),
+			[]string{"a", "b"},
+			[]string{"c", "d"},
+		},
+		{
+			"empty subject",
+			Subject(""),
+			[]string{"a", "b"},
+			[]string{},
+		},
+		{
+			"empty pattern",
+			Subject("a.b.c"),
+			[]string{},
+			[]string{"a", "b", "c"},
+		},
+		{
+			"pattern.>",
+			Subject("a.b.c.d.e"),
+			[]string{"a", "b", ">"},
+			[]string{"c", "d", "e"},
+		},
+		{
+			"pattern.*",
+			Subject("a.b.c.d.e"),
+			[]string{"a", "b", "*"},
+			[]string{"c"},
+		},
+		{
+			"pattern.*.-",
+			Subject("a.b.c.d.e"),
+			[]string{"a", "b", "*", "-"},
+			[]string{"c", "d", "e"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.s.RemainingTokens(tt.pattern); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Subject.RemainingTokens() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

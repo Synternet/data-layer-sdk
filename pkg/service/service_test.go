@@ -1,12 +1,10 @@
 package service
 
 import (
-	"reflect"
 	"sync/atomic"
 	"testing"
 
 	"github.com/nats-io/nats.go"
-	"github.com/syntropynet/data-layer-sdk/pkg/options"
 )
 
 const (
@@ -42,35 +40,6 @@ func TestBase_MakeMsgVerify(t *testing.T) {
 	if err != nil {
 		t.Error("failure: ", err.Error())
 		t.Fail()
-	}
-}
-
-func TestPublisher_getUserId(t *testing.T) {
-	tests := []struct {
-		name string
-		subj string
-		suff []string
-		want []string
-	}{
-		{
-			"simple case",
-			"foo.bar.req.a.b",
-			[]string{"req", ">"},
-			[]string{"req", "a", "b"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &Service{
-				Options: options.Options{
-					Prefix: "foo",
-					Name:   "bar",
-				},
-			}
-			if got := p.GetStreamIdParts(&nats.Msg{Subject: tt.subj}, tt.suff...); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Publisher.getUserId() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 
