@@ -33,9 +33,9 @@ func main() {
 		return
 	}
 
+	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Enter Seed(Account NKEY): ")
-		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
 		seed := scanner.Text()
 
