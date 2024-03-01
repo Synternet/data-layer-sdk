@@ -82,6 +82,14 @@ func WithName(name string) options.Option {
 	}
 }
 
+// WithStreamName sets name of the JetStream stream.
+// If an empty string is used, then stream name will be "{prefix}-{name}".
+func WithStreamName(name string) options.Option {
+	return func(o *options.Options) {
+		o.StreamName = name
+	}
+}
+
 // WithPrefix sets the prefix for the subject. The subject is in the form of {prefix}.{name}.
 // Subscriptions and publishing will use the subject constructed from prefix and name.
 func WithPrefix(prefix string) options.Option {

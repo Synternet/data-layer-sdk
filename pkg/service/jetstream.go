@@ -16,12 +16,16 @@ import (
 var ErrNotAvailable = fmt.Errorf("not available")
 
 func (b *Service) jsMakeHash(subjects ...string) string {
-	sum := sha256.Sum256([]byte(strings.Join(subjects, ",")))
+	config := strings.Join(subjects, ",")
+	sum := sha256.Sum256([]byte(config))
 	return base58.Encode(sum[:])
 }
 
-func (b *Service) jsStreamName(hash string) string {
-	return fmt.Sprintf("%s-stream-%s", b.Name, hash)
+func (b *Service) jsStreamName() string {
+	if b.StreamName != "" {
+		return b.StreamName
+	}
+	return fmt.Sprintf("%s-%s", b.Prefix, b.Name)
 }
 
 func (b *Service) jsConsumerName(hash string) string {
@@ -62,7 +66,7 @@ func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subject
 	}
 
 	hash := b.jsMakeHash(subjects...)
-	streamName := b.jsStreamName(hash)
+	streamName := b.jsStreamName()
 
 	connCtx, connCancelFn := context.WithTimeout(b.Context, 10*time.Second)
 	defer connCancelFn()
@@ -115,7 +119,7 @@ func (b *Service) RemoveStream(subjects ...string) error {
 	}
 
 	hash := b.jsMakeHash(subjects...)
-	streamName := b.jsStreamName(hash)
+	streamName := b.jsConsumerName(hash)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -129,7 +133,6 @@ func (b *Service) RemoveStream(subjects ...string) error {
 	}
 
 	b.removeStreamsFromMap(subjects)
-
 	return nil
 }
 
