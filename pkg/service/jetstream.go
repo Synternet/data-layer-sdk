@@ -29,7 +29,7 @@ func (b *Service) jsStreamName() string {
 }
 
 func (b *Service) jsConsumerName(hash string) string {
-	return fmt.Sprintf("%s-%s-%s", b.Identity, b.Name, hash)
+	return fmt.Sprintf("%s-%s", b.Identity, hash)
 }
 
 // AddStream is an experimental feature that creates a durable stream. It is possible to
