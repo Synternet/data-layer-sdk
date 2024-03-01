@@ -38,6 +38,11 @@ func (b *Service) jsConsumerName(hash string) string {
 //
 // The interface for this feature is experimental and it should be expected to change.
 //
+// This method will create a stream with maxMsgs, maxBytes, and age for a list of subjects on JetStream if it does not exist.
+// This is a temporary solution so that the stream doesn't have to be created manually. However,
+// this will change in the near future, therefore users will have to make sure that the stream exists
+// before calling this method(maxMsgs, maxBytes, and age parameters will be removed).
+//
 // NOTE: Messages are automatically acknowledged after handler returns.
 func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subjects ...string) error {
 	if b.js == nil {
