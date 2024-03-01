@@ -82,6 +82,8 @@ type Options struct {
 	Prefix string
 	// Name of the NATS queue
 	QueueName string
+	// Name of JetStream stream. If an empty string is used, then stream name will be "{prefix}-{name}"
+	StreamName string
 	// Name of the publisher
 	Name string
 	// Codec is used to marshal published messages to whire format.

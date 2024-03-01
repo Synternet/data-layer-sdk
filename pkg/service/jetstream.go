@@ -16,16 +16,20 @@ import (
 var ErrNotAvailable = fmt.Errorf("not available")
 
 func (b *Service) jsMakeHash(subjects ...string) string {
-	sum := sha256.Sum256([]byte(strings.Join(subjects, ",")))
+	config := strings.Join(subjects, ",")
+	sum := sha256.Sum256([]byte(config))
 	return base58.Encode(sum[:])
 }
 
-func (b *Service) jsStreamName(hash string) string {
-	return fmt.Sprintf("%s-stream-%s", b.Name, hash)
+func (b *Service) jsStreamName() string {
+	if b.StreamName != "" {
+		return b.StreamName
+	}
+	return fmt.Sprintf("%s-%s", b.Prefix, b.Name)
 }
 
 func (b *Service) jsConsumerName(hash string) string {
-	return fmt.Sprintf("%s-%s-%s", b.Identity, b.Name, hash)
+	return fmt.Sprintf("%s-%s", b.Identity, hash)
 }
 
 // AddStream is an experimental feature that creates a durable stream. It is possible to
@@ -33,6 +37,11 @@ func (b *Service) jsConsumerName(hash string) string {
 // the subject is included in the created stream.
 //
 // The interface for this feature is experimental and it should be expected to change.
+//
+// This method will create a stream with maxMsgs, maxBytes, and age for a list of subjects on JetStream if it does not exist.
+// This is a temporary solution so that the stream doesn't have to be created manually. However,
+// this will change in the near future, therefore users will have to make sure that the stream exists
+// before calling this method(maxMsgs, maxBytes, and age parameters will be removed).
 //
 // NOTE: Messages are automatically acknowledged after handler returns.
 func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subjects ...string) error {
@@ -62,7 +71,7 @@ func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subject
 	}
 
 	hash := b.jsMakeHash(subjects...)
-	streamName := b.jsStreamName(hash)
+	streamName := b.jsStreamName()
 
 	connCtx, connCancelFn := context.WithTimeout(b.Context, 10*time.Second)
 	defer connCancelFn()
@@ -106,8 +115,8 @@ func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subject
 	return nil
 }
 
-// RemoveStream will attempt to remove consumers and streams based on a list of subjects.
-// List of subjects must be exactly the same as was used in AddStream since js Stream and js Consumer names
+// RemoveStream will attempt to remove consumers based on a list of subjects.
+// List of subjects must be exactly the same as was used in AddStream since js Consumer names
 // are based on the subjects.
 func (b *Service) RemoveStream(subjects ...string) error {
 	if b.js == nil {
@@ -115,7 +124,8 @@ func (b *Service) RemoveStream(subjects ...string) error {
 	}
 
 	hash := b.jsMakeHash(subjects...)
-	streamName := b.jsStreamName(hash)
+	streamName := b.jsStreamName()
+	consumerName := b.jsConsumerName(hash)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -123,13 +133,12 @@ func (b *Service) RemoveStream(subjects ...string) error {
 	ctx, cancel := context.WithTimeout(b.Context, 30*time.Second)
 	defer cancel()
 
-	err := b.js.DeleteStream(streamName, nats.Context(ctx))
+	err := b.js.DeleteConsumer(streamName, consumerName, nats.Context(ctx))
 	if err != nil {
-		return fmt.Errorf("DeleteStream failed: %w", err)
+		return fmt.Errorf("DeleteConsumer failed: %w", err)
 	}
 
 	b.removeStreamsFromMap(subjects)
-
 	return nil
 }
 
