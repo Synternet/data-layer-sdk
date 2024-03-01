@@ -110,8 +110,8 @@ func (b *Service) AddStream(maxMsgs, maxBytes uint64, age time.Duration, subject
 	return nil
 }
 
-// RemoveStream will attempt to remove consumers and streams based on a list of subjects.
-// List of subjects must be exactly the same as was used in AddStream since js Stream and js Consumer names
+// RemoveStream will attempt to remove consumers based on a list of subjects.
+// List of subjects must be exactly the same as was used in AddStream since js Consumer names
 // are based on the subjects.
 func (b *Service) RemoveStream(subjects ...string) error {
 	if b.js == nil {
@@ -119,7 +119,8 @@ func (b *Service) RemoveStream(subjects ...string) error {
 	}
 
 	hash := b.jsMakeHash(subjects...)
-	streamName := b.jsConsumerName(hash)
+	streamName := b.jsStreamName()
+	consumerName := b.jsConsumerName(hash)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -127,9 +128,9 @@ func (b *Service) RemoveStream(subjects ...string) error {
 	ctx, cancel := context.WithTimeout(b.Context, 30*time.Second)
 	defer cancel()
 
-	err := b.js.DeleteStream(streamName, nats.Context(ctx))
+	err := b.js.DeleteConsumer(streamName, consumerName, nats.Context(ctx))
 	if err != nil {
-		return fmt.Errorf("DeleteStream failed: %w", err)
+		return fmt.Errorf("DeleteConsumer failed: %w", err)
 	}
 
 	b.removeStreamsFromMap(subjects)
