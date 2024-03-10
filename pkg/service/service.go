@@ -203,7 +203,8 @@ func (b *Service) Subscribe(handler MessageHandler, suffixes ...string) (*nats.S
 	return b.SubscribeTo(handler, b.Subject(suffixes...))
 }
 
-// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead.
+// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead and will respond
+// either with Error type, or response from the handler.
 func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
 	return b.SubscribeTo(
 		func(msg Message) {
