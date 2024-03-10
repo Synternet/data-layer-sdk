@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/cosmos/btcutil/base58"
 	"github.com/nats-io/nats.go"
@@ -22,7 +23,7 @@ import (
 
 // StatusFunc is a type for callback func. This will be called periodically to construct telemetry status.
 // "uptime", "goroutines", "period" keys will be overriden internally.
-type StatusFunc func() map[string]any
+type StatusFunc func() map[string]string
 
 type JetStreamer interface {
 	JetStream(opts ...nats.JSOpt) (nats.JetStreamContext, error)
@@ -151,33 +152,47 @@ func (b *Service) RemoveStatusCallback(callback StatusFunc) {
 	delete(b.statusCallback, reflect.ValueOf(callback).Pointer())
 }
 
-func (b *Service) collectStatus() map[string]any {
+// Concatenate status copies (k,v) from items to status optionally prefixing the key with path.
+func (b *Service) ConcatenateStatus(path string, status, items map[string]string) map[string]string {
+	if items == nil || status == nil {
+		return status
+	}
+	for k, v := range items {
+		if path != "" {
+			k = fmt.Sprintf("%s.%s", path, k)
+		}
+		status[k] = v
+	}
+
+	return status
+}
+
+func (b *Service) collectStatus() map[string]string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	status := make(map[string]any)
+	status := make(map[string]string)
 
 	for _, cb := range b.statusCallback {
 		newStatus := cb()
-		if newStatus == nil {
-			continue
-		}
-		for k, v := range newStatus {
-			status[k] = v
-		}
+		b.ConcatenateStatus("", status, newStatus)
 	}
 
 	status["uptime"] = time.Since(b.startTime).String()
 	status["period"] = time.Since(b.prevTelemetry).String()
-	status["goroutines"] = runtime.NumGoroutine()
-	status["messages"] = map[string]any{
-		"out_queue":     len(b.publishCh),
-		"out_queue_cap": cap(b.publishCh),
-		"in":            b.msg_in_counter.Swap(0),
-		"out":           b.msg_out_counter.Swap(0),
-		"bytes_in":      b.bytes_in_counter.Swap(0),
-		"bytes_out":     b.bytes_out_counter.Swap(0),
-	}
+	status["goroutines"] = strconv.FormatInt(int64(runtime.NumGoroutine()), 10)
+	b.ConcatenateStatus(
+		"messages",
+		status,
+		map[string]string{
+			"out_queue":     strconv.FormatInt(int64(len(b.publishCh)), 10),
+			"out_queue_cap": strconv.FormatInt(int64(cap(b.publishCh)), 10),
+			"in":            strconv.FormatUint(b.msg_in_counter.Swap(0), 10),
+			"out":           strconv.FormatUint(b.msg_out_counter.Swap(0), 10),
+			"bytes_in":      strconv.FormatUint(b.bytes_in_counter.Swap(0), 10),
+			"bytes_out":     strconv.FormatUint(b.bytes_out_counter.Swap(0), 10),
+		},
+	)
 
 	return status
 }
@@ -271,7 +286,7 @@ func (b *Service) makeMsg(payload []byte, subject string) (*nats.Msg, error) {
 }
 
 // Unmarshal is a convenience function that first verifies any signatures in the message and unmarshals bytes into a message.
-func (b *Service) Unmarshal(nmsg Message, msg any) (nats.Header, error) {
+func (b *Service) Unmarshal(nmsg Message, msg proto.Message) (nats.Header, error) {
 	// TODO check signatures
 	if err := b.Verify(nmsg); err != nil {
 		return nmsg.Header(), err
@@ -338,7 +353,7 @@ func (b *Service) PublishBufTo(buf []byte, suffixes ...string) error {
 
 // RequestFrom requests a reply or a stream from a subject using subscribing NATS connection.
 // This a synchronous operation that does not involve publisher queue.
-func (b *Service) RequestFrom(ctx context.Context, msg any, resp any, suffixes ...string) (Message, error) {
+func (b *Service) RequestFrom(ctx context.Context, msg proto.Message, resp proto.Message, suffixes ...string) (Message, error) {
 	payload, err := b.Codec.Encode(nil, msg)
 	if err != nil {
 		return nil, err

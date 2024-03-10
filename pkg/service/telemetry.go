@@ -5,26 +5,22 @@ import (
 	"time"
 )
 
+//go:generate protoc -I ../../proto --proto_path=../../proto --go_opt=paths=source_relative --go_out=./ ../../proto/telemetry.proto
+
 func (b *Service) handleTelemetryPing(nmsg Message) {
 	now := time.Now().UnixNano()
-	var ping TelemetryPing
+	var ping Ping
 	_, err := b.Unmarshal(nmsg, &ping)
 	if err != nil {
 		b.Logger.Error("ping", err)
 		return
 	}
 
-	timestamp, err := strconv.ParseInt(ping.Timestamp, 10, 64)
-	if err != nil {
-		b.Logger.Error("not a number in timestamp", err)
-		return
-	}
-
 	nmsg.Respond(
-		&TelemetryPong{
+		&Pong{
 			Nonce:     ping.Nonce,
-			Timestamp: strconv.FormatInt(now, 10),
-			Owl:       strconv.FormatInt(now-timestamp, 10),
+			Timestamp: now,
+			Owl:       now - ping.Timestamp,
 		},
 	)
 }
