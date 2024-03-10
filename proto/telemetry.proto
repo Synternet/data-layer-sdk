@@ -19,5 +19,5 @@ message Pong {
 }
 
 message Error {
-  string error = 1;
+  string error = 200;
 }
