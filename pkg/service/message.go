@@ -6,6 +6,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
+	"google.golang.org/protobuf/proto"
 )
 
 type Message interface {
@@ -16,7 +17,7 @@ type Message interface {
 	Metadata() (*nats.MsgMetadata, error)
 	Nak(opts ...nats.AckOpt) error
 	NakWithDelay(delay time.Duration, opts ...nats.AckOpt) error
-	Respond(any) error
+	Respond(proto.Message) error
 	Term(opts ...nats.AckOpt) error
 
 	Message() *nats.Msg
@@ -28,7 +29,7 @@ type Message interface {
 }
 
 type MessageHandler func(msg Message)
-type ServiceHandler func(msg Message) (any, error)
+type ServiceHandler func(msg Message) (proto.Message, error)
 
 type natsMessage struct {
 	*nats.Msg
@@ -50,7 +51,7 @@ func (m natsMessage) Message() *nats.Msg {
 	return m.Msg
 }
 
-func (m natsMessage) Respond(msg any) error {
+func (m natsMessage) Respond(msg proto.Message) error {
 	payload, err := m.codec.Encode(nil, msg)
 	if err != nil {
 		return err

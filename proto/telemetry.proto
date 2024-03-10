@@ -17,3 +17,7 @@ message Pong {
 	int64 timestamp = 2;
 	int64 owl = 3;
 }
+
+message Error {
+  string error = 1;
+}

@@ -210,8 +210,8 @@ func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subsc
 			resp, err := handler(msg)
 			if err != nil {
 				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
-				err1 := msg.Respond(fmt.Sprintf("error:%s", err.Error()))
-				if err != nil {
+				err1 := msg.Respond(&Error{Error: err.Error()})
+				if err1 != nil {
 					b.Logger.Error("service handler failed during error", "err", err, "err1", err1, "suffixes", suffixes)
 				}
 				return
