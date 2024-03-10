@@ -14,6 +14,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/syntropynet/data-layer-sdk/pkg/codec"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 )
 
 type ContextKeyType string
@@ -35,8 +36,8 @@ type NatsConn interface {
 
 // Codec represents a message encoder and decoder
 type Codec interface {
-	Encode(nmsg []byte, msg any) ([]byte, error)
-	Decode(nmsg []byte, msg any) error
+	Encode(nmsg []byte, msg proto.Message) ([]byte, error)
+	Decode(nmsg []byte, msg proto.Message) error
 }
 
 var _ NatsConn = &nats.Conn{}

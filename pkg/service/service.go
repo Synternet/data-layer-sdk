@@ -296,7 +296,7 @@ func (b *Service) Unmarshal(nmsg Message, msg proto.Message) (nats.Header, error
 
 // Publish will sign the message and publish it.
 // It will sign the message in place. Also it will update the timestamp and identity fields.
-func (b *Service) Publish(msg any, suffixes ...string) error {
+func (b *Service) Publish(msg proto.Message, suffixes ...string) error {
 	return b.PublishTo(msg, b.Subject(suffixes...))
 }
 
@@ -307,7 +307,7 @@ func (b *Service) PublishBuf(buf []byte, suffixes ...string) error {
 
 // PublishTo will sign the message and publish it to a specific subject.
 // It will sign the message in place. Also it will update the timestamp and identity fields.
-func (b *Service) PublishTo(msg any, suffixes ...string) error {
+func (b *Service) PublishTo(msg proto.Message, suffixes ...string) error {
 	payload, err := b.Codec.Encode(nil, msg)
 	if err != nil {
 		return err
@@ -315,12 +315,12 @@ func (b *Service) PublishTo(msg any, suffixes ...string) error {
 	return b.PublishBufTo(payload, suffixes...)
 }
 
-func (b *Service) Respond(msg Message, buf []byte, suffixes ...string) error {
-	payload, err := b.Codec.Encode(nil, msg.Message())
+func (b *Service) Respond(nmsg Message, msg proto.Message, suffixes ...string) error {
+	payload, err := b.Codec.Encode(nil, msg)
 	if err != nil {
 		return err
 	}
-	return b.RespondBuf(msg, payload, suffixes...)
+	return b.RespondBuf(nmsg, payload, suffixes...)
 }
 
 func (b *Service) RespondBuf(msg Message, buf []byte, suffixes ...string) error {

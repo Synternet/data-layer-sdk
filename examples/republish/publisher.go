@@ -6,6 +6,7 @@ import (
 
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
 	"github.com/syntropynet/data-layer-sdk/pkg/service"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
@@ -19,6 +20,11 @@ type Publisher struct {
 type MyMessage struct {
 	RequestWas []byte `json:"request"`
 }
+
+// Required for compatibility with protobuf. Since we use JSON codec, we don't actually need this to be a proper protobuf.
+// This workaround can be used to decode arbitrary JSON messages and still maintain type-safety.
+func (*MyMessage) ProtoReflect() protoreflect.Message { return nil }
+func (*MyMessage) ProtoMessage()                      {}
 
 func New(o ...options.Option) (*Publisher, error) {
 	ret := &Publisher{
@@ -57,7 +63,7 @@ func (p *Publisher) handleQuery(nmsg service.Message) {
 	// Do some processing.
 
 	p.Publish(
-		MyMessage{
+		&MyMessage{
 			RequestWas: nmsg.Data(),
 		},
 		"tx",
