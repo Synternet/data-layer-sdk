@@ -188,6 +188,28 @@ func (b *Service) Subscribe(handler MessageHandler, suffixes ...string) (*nats.S
 	return b.SubscribeTo(handler, b.Subject(suffixes...))
 }
 
+// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead.
+func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
+	return b.SubscribeTo(
+		func(msg Message) {
+			resp, err := handler(msg)
+			if err != nil {
+				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
+				err1 := msg.Respond(fmt.Sprintf("error:%s", err.Error()))
+				if err != nil {
+					b.Logger.Error("service handler failed during error", "err", err, "err1", err1, "suffixes", suffixes)
+				}
+				return
+			}
+			err = msg.Respond(resp)
+			if err != nil {
+				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
+			}
+		},
+		b.Subject(suffixes...),
+	)
+}
+
 // SubscribeTo will subscribe to a subject constructed {...suffixes}, where
 // suffixes are joined using ".".
 //
@@ -316,12 +338,24 @@ func (b *Service) PublishBufTo(buf []byte, suffixes ...string) error {
 
 // RequestFrom requests a reply or a stream from a subject using subscribing NATS connection.
 // This a synchronous operation that does not involve publisher queue.
-func (b *Service) RequestFrom(ctx context.Context, msg any, suffixes ...string) (Message, error) {
+func (b *Service) RequestFrom(ctx context.Context, msg any, resp any, suffixes ...string) (Message, error) {
 	payload, err := b.Codec.Encode(nil, msg)
 	if err != nil {
 		return nil, err
 	}
-	return b.RequestBufFrom(ctx, payload, suffixes...)
+	response, err := b.RequestBufFrom(ctx, payload, suffixes...)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp != nil {
+		_, err := b.Unmarshal(response, resp)
+		if err != nil {
+			return response, fmt.Errorf("unmarshal failed: %w", err)
+		}
+	}
+
+	return response, err
 }
 
 // RequestBufFrom requests a reply or a stream from a subject using subscribing NATS connection.

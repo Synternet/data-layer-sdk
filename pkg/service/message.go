@@ -28,6 +28,7 @@ type Message interface {
 }
 
 type MessageHandler func(msg Message)
+type ServiceHandler func(msg Message) (any, error)
 
 type natsMessage struct {
 	*nats.Msg
