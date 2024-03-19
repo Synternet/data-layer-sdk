@@ -69,6 +69,8 @@ type Options struct {
 	PubNats NatsConn
 	// Subscribing NATS connection
 	SubNats NatsConn
+	// Request/Reply NATS connection
+	ReqNats NatsConn
 
 	// The private key for this publisher.
 	// This key is used to sign the messages and is used to derive the identity.

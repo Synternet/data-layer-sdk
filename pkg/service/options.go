@@ -48,6 +48,7 @@ func WithNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
 		WithPubNats(nc)(o)
 		WithSubNats(nc)(o)
+		WithReqNats(nc)(o)
 	}
 }
 
@@ -68,6 +69,17 @@ func WithSubNats(nc options.NatsConn) options.Option {
 			return
 		}
 		o.SubNats = nc
+		WithReqNats(nc)(o)
+	}
+}
+
+// WithReqNats sets up preconfigured NATS connector speficivally for request/reply.
+func WithReqNats(nc options.NatsConn) options.Option {
+	return func(o *options.Options) {
+		if nc == nil {
+			return
+		}
+		o.ReqNats = nc
 	}
 }
 
