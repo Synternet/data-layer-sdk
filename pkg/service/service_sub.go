@@ -1,36 +1,11 @@
 package service
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/nats-io/nats.go"
 	"github.com/syntropynet/data-layer-sdk/pkg/options"
 )
-
-// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead and will respond
-// either with Error type, or response from the handler. Serve will use ReqNats connection.
-func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
-	return b.subscribeTo(
-		b.ReqNats,
-		func(msg Message) {
-			resp, err := handler(msg)
-			if err != nil {
-				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
-				err1 := msg.Respond(&Error{Error: err.Error()})
-				if err1 != nil {
-					b.Logger.Error("service handler failed during error", "err", err, "err1", err1, "suffixes", suffixes)
-				}
-				return
-			}
-			err = msg.Respond(resp)
-			if err != nil {
-				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
-			}
-		},
-		b.Subject(suffixes...),
-	)
-}
 
 // Subscribe will subscribe to a subject constructed from {prefix}.{name}.{...suffixes}, where
 // suffixes are joined using ".". Subscribe will use SubNats connection.
@@ -48,7 +23,7 @@ func (b *Service) SubscribeTo(handler MessageHandler, suffixes ...string) (*nats
 
 func (b *Service) subscribeTo(nc options.NatsConn, handler MessageHandler, suffixes ...string) (*nats.Subscription, error) {
 	if nc == nil {
-		return nil, fmt.Errorf("subscribing NATS connection is nil")
+		return nil, ErrSubConnection
 	}
 	if b.VerboseLog {
 		b.Logger.Debug("SubscribeTo", "suffixes", suffixes)

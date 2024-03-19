@@ -5,8 +5,33 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 )
+
+// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead and will respond
+// either with Error type, or response from the handler. Serve will use ReqNats connection.
+func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
+	return b.subscribeTo(
+		b.ReqNats,
+		func(msg Message) {
+			resp, err := handler(msg)
+			if err != nil {
+				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
+				err1 := msg.Respond(&Error{Error: err.Error()})
+				if err1 != nil {
+					b.Logger.Error("service handler failed during error", "err", err, "err1", err1, "suffixes", suffixes)
+				}
+				return
+			}
+			err = msg.Respond(resp)
+			if err != nil {
+				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
+			}
+		},
+		b.Subject(suffixes...),
+	)
+}
 
 // RequestFrom requests a reply or a stream from a subject using ReqNats connection. The subject will be constructed from tokens.
 // This a synchronous operation that does not involve publisher queue.
@@ -34,7 +59,7 @@ func (b *Service) RequestFrom(ctx context.Context, msg proto.Message, resp proto
 // This a synchronous operation that does not involve publisher queue.
 func (b *Service) RequestBufFrom(ctx context.Context, buf []byte, tokens ...string) (Message, error) {
 	if b.ReqNats == nil {
-		return nil, fmt.Errorf("request NATS connection is nil")
+		return nil, ErrReqConnection
 	}
 
 	msg, err := b.makeMsg(buf, strings.Join(tokens, "."))

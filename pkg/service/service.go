@@ -30,6 +30,15 @@ type JetStreamer interface {
 
 var _ JetStreamer = &nats.Conn{}
 
+var (
+	ErrInvalidSignature = errors.New("invalid signature")
+	ErrInvalidIdentity  = errors.New("invalid identity")
+	ErrUnknownIdentity  = errors.New("unknown identity")
+	ErrPubConnection    = errors.New("publishing NATS connection is nil")
+	ErrSubConnection    = errors.New("subscribing NATS connection is nil")
+	ErrReqConnection    = errors.New("request NATS connection is nil")
+)
+
 type jsStream struct {
 	cfgStream    *nats.StreamConfig
 	cfgConsumer  *nats.ConsumerConfig
@@ -256,7 +265,7 @@ func (b *Service) Verify(nmsg Message) error {
 	switch {
 	case len(b.KnownPublicKeys) != 0:
 		if key, ok := b.KnownPublicKeys[identity]; !ok {
-			return errors.New("unknown identity")
+			return ErrUnknownIdentity
 		} else {
 			pkey = key
 		}
@@ -265,7 +274,7 @@ func (b *Service) Verify(nmsg Message) error {
 	default:
 		identityBytes := base58.Decode(identity)
 		if len(identityBytes) != ed25519.PublicKeySize {
-			return errors.New("invalid identity")
+			return ErrInvalidIdentity
 		}
 		pkey = ed25519.PublicKey(identityBytes)
 	}
@@ -275,7 +284,7 @@ func (b *Service) Verify(nmsg Message) error {
 		return err
 	}
 	if !ed25519.Verify(pkey, nmsg.Data(), signatureBytes) {
-		return errors.New("invalid signature")
+		return ErrInvalidSignature
 	}
 
 	return nil

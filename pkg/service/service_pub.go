@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -31,7 +30,7 @@ func (b *Service) PublishTo(msg proto.Message, tokens ...string) error {
 // PublishBufTo will publish the raw bytes to a specific subject.
 func (b *Service) PublishBufTo(buf []byte, tokens ...string) error {
 	if b.PubNats == nil {
-		return fmt.Errorf("publishing NATS connection is nil")
+		return ErrPubConnection
 	}
 	msg, err := b.makeMsg(buf, strings.Join(tokens, "."))
 	if err != nil {
