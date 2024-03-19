@@ -17,7 +17,7 @@ func (b *Service) PublishBuf(buf []byte, suffixes ...string) error {
 	return b.PublishBufTo(buf, b.Subject(suffixes...))
 }
 
-// PublishTo will sign the message and publish it to a specific subject constructed from suffixes.
+// PublishTo will sign the message and publish it to a specific subject constructed from subject tokens.
 // PublishTo will use PubNats connection.
 func (b *Service) PublishTo(msg proto.Message, tokens ...string) error {
 	payload, err := b.Codec.Encode(nil, msg)
@@ -27,7 +27,7 @@ func (b *Service) PublishTo(msg proto.Message, tokens ...string) error {
 	return b.PublishBufTo(payload, tokens...)
 }
 
-// PublishBufTo will publish the raw bytes to a specific subject.
+// PublishBufTo is the same as PublishTo, but for raw bytes.
 func (b *Service) PublishBufTo(buf []byte, tokens ...string) error {
 	if b.PubNats == nil {
 		return ErrPubConnection

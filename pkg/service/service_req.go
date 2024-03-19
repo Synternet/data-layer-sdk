@@ -9,8 +9,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead and will respond
-// either with Error type, or response from the handler. Serve will use ReqNats connection.
+// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead, and will respond
+// either with Error type or response from the handler. Serve will use ReqNats connection.
 func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
 	return b.subscribeTo(
 		b.ReqNats,
@@ -33,7 +33,7 @@ func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subsc
 	)
 }
 
-// RequestFrom requests a reply or a stream from a subject using ReqNats connection. The subject will be constructed from tokens.
+// RequestFrom requests a reply from a subject using ReqNats connection. The subject will be constructed from tokens.
 // This a synchronous operation that does not involve publisher queue.
 func (b *Service) RequestFrom(ctx context.Context, msg proto.Message, resp proto.Message, tokens ...string) (Message, error) {
 	payload, err := b.Codec.Encode(nil, msg)
@@ -55,7 +55,7 @@ func (b *Service) RequestFrom(ctx context.Context, msg proto.Message, resp proto
 	return response, err
 }
 
-// RequestBufFrom requests a reply or a stream from a subject using ReqNats connection.
+// RequestBufFrom requests a reply from a subject using ReqNats connection.
 // This a synchronous operation that does not involve publisher queue.
 func (b *Service) RequestBufFrom(ctx context.Context, buf []byte, tokens ...string) (Message, error) {
 	if b.ReqNats == nil {
