@@ -43,11 +43,12 @@ func WithContext(ctx context.Context) options.Option {
 	}
 }
 
-// WithNats sets up preconfigured NATS connector for publishing and subscribing.
+// WithNats sets up preconfigured NATS connector for publishing, subscribing, and request/reply.
 func WithNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
 		WithPubNats(nc)(o)
 		WithSubNats(nc)(o)
+		WithReqNats(nc)(o)
 	}
 }
 
@@ -61,13 +62,26 @@ func WithPubNats(nc options.NatsConn) options.Option {
 	}
 }
 
-// WithSubNats sets up preconfigured NATS connector speficivally for subscribing.
+// WithSubNats sets up preconfigured NATS connector specifically for subscribing.
+//
+// NOTE: This will also set ReqNats for compatibility.
 func WithSubNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
 		if nc == nil {
 			return
 		}
 		o.SubNats = nc
+		WithReqNats(nc)(o)
+	}
+}
+
+// WithReqNats sets up preconfigured NATS connector specifically for request/reply.
+func WithReqNats(nc options.NatsConn) options.Option {
+	return func(o *options.Options) {
+		if nc == nil {
+			return
+		}
+		o.ReqNats = nc
 	}
 }
 

@@ -12,7 +12,7 @@ func (b *Service) handleTelemetryPing(nmsg Message) {
 	var ping Ping
 	_, err := b.Unmarshal(nmsg, &ping)
 	if err != nil {
-		b.Logger.Error("ping", err)
+		b.Logger.Error("ping unmarshal", "err", err)
 		return
 	}
 

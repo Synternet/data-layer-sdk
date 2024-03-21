@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,6 +29,15 @@ type JetStreamer interface {
 }
 
 var _ JetStreamer = &nats.Conn{}
+
+var (
+	ErrInvalidSignature = errors.New("invalid signature")
+	ErrInvalidIdentity  = errors.New("invalid identity")
+	ErrUnknownIdentity  = errors.New("unknown identity")
+	ErrPubConnection    = errors.New("publishing NATS connection is nil")
+	ErrSubConnection    = errors.New("subscribing NATS connection is nil")
+	ErrReqConnection    = errors.New("request NATS connection is nil")
+)
 
 type jsStream struct {
 	cfgStream    *nats.StreamConfig
@@ -197,65 +205,6 @@ func (b *Service) collectStatus() map[string]string {
 	return status
 }
 
-// Subscribe will subscribe to a subject constructed from {prefix}.{name}.{...suffixes}, where
-// suffixes are joined using ".".
-func (b *Service) Subscribe(handler MessageHandler, suffixes ...string) (*nats.Subscription, error) {
-	return b.SubscribeTo(handler, b.Subject(suffixes...))
-}
-
-// Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead and will respond
-// either with Error type, or response from the handler.
-func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
-	return b.SubscribeTo(
-		func(msg Message) {
-			resp, err := handler(msg)
-			if err != nil {
-				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
-				err1 := msg.Respond(&Error{Error: err.Error()})
-				if err1 != nil {
-					b.Logger.Error("service handler failed during error", "err", err, "err1", err1, "suffixes", suffixes)
-				}
-				return
-			}
-			err = msg.Respond(resp)
-			if err != nil {
-				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
-			}
-		},
-		b.Subject(suffixes...),
-	)
-}
-
-// SubscribeTo will subscribe to a subject constructed {...suffixes}, where
-// suffixes are joined using ".".
-//
-// Experimental: When a stream was registered with AddStream SubscribeTo will use durable stream instead of realtime.
-func (b *Service) SubscribeTo(handler MessageHandler, suffixes ...string) (*nats.Subscription, error) {
-	if b.SubNats == nil {
-		return nil, fmt.Errorf("subscribing NATS connection is nil")
-	}
-	if b.VerboseLog {
-		b.Logger.Debug("SubscribeTo", "suffixes", suffixes)
-	}
-	natsHandler := func(msg *nats.Msg) {
-		b.msg_in_counter.Add(1)
-		b.bytes_in_counter.Add(uint64(len(msg.Data)))
-		wrapped := wrapMessage(b.Codec, &b.msg_out_counter, &b.bytes_out_counter, b.makeMsg, msg)
-		handler(wrapped)
-	}
-
-	subject := strings.Join(suffixes, ".")
-
-	if sub, err := b.attemptJSConsume(natsHandler, subject); err == nil {
-		return sub, nil
-	}
-
-	if b.QueueName != "" {
-		return b.SubNats.QueueSubscribe(subject, b.QueueName, natsHandler)
-	}
-	return b.SubNats.Subscribe(subject, natsHandler)
-}
-
 // Close should be closed to clean-up the publisher.
 func (b *Service) Close() error {
 	b.Cancel(nil)
@@ -264,7 +213,7 @@ func (b *Service) Close() error {
 
 // Fail is a convenience function that allows to asynchronously propagate errors.
 func (b *Service) Fail(err error) {
-	b.Logger.Error("Publisher failed", err)
+	b.Logger.Error("Publisher failed", "err", err)
 	b.Cancel(err)
 }
 
@@ -295,105 +244,6 @@ func (b *Service) Unmarshal(nmsg Message, msg proto.Message) (nats.Header, error
 	return nmsg.Header(), b.Codec.Decode(nmsg.Data(), msg)
 }
 
-// Publish will sign the message and publish it.
-// It will sign the message in place. Also it will update the timestamp and identity fields.
-func (b *Service) Publish(msg proto.Message, suffixes ...string) error {
-	return b.PublishTo(msg, b.Subject(suffixes...))
-}
-
-// PublishBuf will publish the raw bytes.
-func (b *Service) PublishBuf(buf []byte, suffixes ...string) error {
-	return b.PublishBufTo(buf, b.Subject(suffixes...))
-}
-
-// PublishTo will sign the message and publish it to a specific subject.
-// It will sign the message in place. Also it will update the timestamp and identity fields.
-func (b *Service) PublishTo(msg proto.Message, suffixes ...string) error {
-	payload, err := b.Codec.Encode(nil, msg)
-	if err != nil {
-		return err
-	}
-	return b.PublishBufTo(payload, suffixes...)
-}
-
-func (b *Service) Respond(nmsg Message, msg proto.Message, suffixes ...string) error {
-	payload, err := b.Codec.Encode(nil, msg)
-	if err != nil {
-		return err
-	}
-	return b.RespondBuf(nmsg, payload, suffixes...)
-}
-
-func (b *Service) RespondBuf(msg Message, buf []byte, suffixes ...string) error {
-	reply, err := b.makeMsg(buf, strings.Join(suffixes, "."))
-	if err != nil {
-		return err
-	}
-
-	return msg.Message().RespondMsg(reply)
-}
-
-// PublishBufTo will publish the raw bytes to a specific subject.
-func (b *Service) PublishBufTo(buf []byte, suffixes ...string) error {
-	if b.PubNats == nil {
-		return fmt.Errorf("publishing NATS connection is nil")
-	}
-	msg, err := b.makeMsg(buf, strings.Join(suffixes, "."))
-	if err != nil {
-		return err
-	}
-
-	select {
-	case <-b.Context.Done():
-		b.Logger.Info("PublishBufTo cancelled", "err", b.Context.Err(), "queue_size", len(b.publishCh))
-		return b.Context.Err()
-	case b.publishCh <- msg:
-	}
-	return nil
-}
-
-// RequestFrom requests a reply or a stream from a subject using subscribing NATS connection.
-// This a synchronous operation that does not involve publisher queue.
-func (b *Service) RequestFrom(ctx context.Context, msg proto.Message, resp proto.Message, suffixes ...string) (Message, error) {
-	payload, err := b.Codec.Encode(nil, msg)
-	if err != nil {
-		return nil, err
-	}
-	response, err := b.RequestBufFrom(ctx, payload, suffixes...)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp != nil {
-		_, err := b.Unmarshal(response, resp)
-		if err != nil {
-			return response, fmt.Errorf("unmarshal failed: %w", err)
-		}
-	}
-
-	return response, err
-}
-
-// RequestBufFrom requests a reply or a stream from a subject using subscribing NATS connection.
-// This a synchronous operation that does not involve publisher queue.
-func (b *Service) RequestBufFrom(ctx context.Context, buf []byte, suffixes ...string) (Message, error) {
-	if b.SubNats == nil {
-		return nil, fmt.Errorf("subscribing NATS connection is nil")
-	}
-
-	msg, err := b.makeMsg(buf, strings.Join(suffixes, "."))
-	if err != nil {
-		return nil, err
-	}
-
-	ret, err := b.SubNats.RequestMsgWithContext(ctx, msg)
-	if err != nil {
-		return nil, err
-	}
-
-	return wrapMessage(b.Codec, &b.msg_out_counter, &b.bytes_out_counter, b.makeMsg, ret), nil
-}
-
 // Sign will sign the bytes.
 func (b *Service) Sign(msg []byte) (signature []byte, publicKey []byte, err error) {
 	if b.PrivateKey == nil {
@@ -415,7 +265,7 @@ func (b *Service) Verify(nmsg Message) error {
 	switch {
 	case len(b.KnownPublicKeys) != 0:
 		if key, ok := b.KnownPublicKeys[identity]; !ok {
-			return errors.New("unknown identity")
+			return ErrUnknownIdentity
 		} else {
 			pkey = key
 		}
@@ -424,7 +274,7 @@ func (b *Service) Verify(nmsg Message) error {
 	default:
 		identityBytes := base58.Decode(identity)
 		if len(identityBytes) != ed25519.PublicKeySize {
-			return errors.New("invalid identity")
+			return ErrInvalidIdentity
 		}
 		pkey = ed25519.PublicKey(identityBytes)
 	}
@@ -434,7 +284,7 @@ func (b *Service) Verify(nmsg Message) error {
 		return err
 	}
 	if !ed25519.Verify(pkey, nmsg.Data(), signatureBytes) {
-		return errors.New("invalid signature")
+		return ErrInvalidSignature
 	}
 
 	return nil

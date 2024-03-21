@@ -214,7 +214,7 @@ func (b *Service) attemptJSConsume(handler nats.MsgHandler, subject string) (*na
 			for _, msg := range msgs {
 				handler(msg)
 				if err := msg.Ack(); err != nil {
-					b.Logger.Warn("message ack failed", err)
+					b.Logger.Warn("message ack failed", "err", err)
 				}
 			}
 		}
