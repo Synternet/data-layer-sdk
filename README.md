@@ -48,10 +48,10 @@ type MyMessage struct {
 
 func New(o ...options.Option) (*Publisher, error) {
 	ret := &Publisher{
-		&service.Service{},
+		Service: &service.Service{},
 	}
 
-	err := ret.Base.Configure(o...)
+	err := ret.Service.Configure(o...)
 	if err != nil {
 		return nil, fmt.Errorf("failed configuring the publisher: %w", err)
 	}
@@ -68,7 +68,7 @@ func (p *Publisher) Start() <-chan error {
 		return p.ErrCh
 	}
 
-	return p.Base.Start()
+	return p.Service.Start()
 }
 
 func (p *Publisher) subscribe() error {
