@@ -8,15 +8,15 @@ import (
 	"os"
 	"os/signal"
 
-	_ "github.com/syntropynet/data-layer-sdk/pkg/dotenv"
+	_ "github.com/synternet/data-layer-sdk/pkg/dotenv"
 
-	"github.com/syntropynet/data-layer-sdk/pkg/options"
-	"github.com/syntropynet/data-layer-sdk/pkg/service"
+	"github.com/synternet/data-layer-sdk/pkg/options"
+	"github.com/synternet/data-layer-sdk/pkg/service"
 )
 
 func main() {
 	urls := flag.String("urls", os.Getenv("NATS_URL"), "NATS urls")
-	source := flag.String("source", "syntropy_defi.price.single.ATOM", "Source Subject to stream from.")
+	source := flag.String("source", "synternet.price.single.ATOM", "Source Subject to stream from.")
 	creds := flag.String("nats-creds", os.Getenv("NATS_CREDS"), "NATS credentials file")
 	nkey := flag.String("nats-nkey", os.Getenv("NATS_NKEY"), "NATS NKey string")
 	jwt := flag.String("nats-jwt", os.Getenv("NATS_JWT"), "NATS JWT string")
@@ -32,7 +32,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	var opts = []options.Option{
+	opts := []options.Option{
 		service.WithContext(ctx),
 		service.WithName("consume"),
 		service.WithNats(conn),

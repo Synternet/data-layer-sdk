@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/syntropynet/data-layer-sdk/pkg/options"
+	"github.com/synternet/data-layer-sdk/pkg/options"
 )
 
 const credsTemplate = `-----BEGIN NATS USER JWT-----

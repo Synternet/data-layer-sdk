@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/nats-io/nats.go"
-	"github.com/syntropynet/data-layer-sdk/pkg/options"
+	"github.com/synternet/data-layer-sdk/pkg/options"
 )
 
 // Subscribe will subscribe to a subject constructed from {prefix}.{name}.{...suffixes}, where

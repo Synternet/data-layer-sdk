@@ -15,13 +15,13 @@ ARG GITHUB_PAT
 RUN bash -c 'echo -e "machine gitlab.com\nlogin gitlab-ci-token\npassword ${CI_JOB_TOKEN}\n" > ~/.netrc'
 RUN git config --global url.https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}.insteadOf https://${CI_SERVER_HOST}
 
-RUN bash -c 'echo -e "machine github.com\nlogin devops-syntropy\npassword ${GITHUB_PAT}\n" >> ~/.netrc'
-RUN git config --global url.https://devops-syntropy:${GITHUB_PAT}@github.com.insteadOf https://github.com
+RUN bash -c 'echo -e "machine github.com\nlogin devops-synternet\npassword ${GITHUB_PAT}\n" >> ~/.netrc'
+RUN git config --global url.https://devops-synternet:${GITHUB_PAT}@github.com.insteadOf https://github.com
 
 # Set up git credentials for private repositories
 RUN mkdir -p ~/.netrc.d && \
     echo -e "machine gitlab.com\nlogin gitlab-ci-token\npassword ${CI_JOB_TOKEN}\n" > ~/.netrc.d/gitlab && \
-    echo -e "machine github.com\nlogin devops-syntropy\npassword ${GITHUB_PAT}\n" > ~/.netrc.d/github && \
+    echo -e "machine github.com\nlogin devops-synternet\npassword ${GITHUB_PAT}\n" > ~/.netrc.d/github && \
     chmod 600 ~/.netrc.d/*
 
 

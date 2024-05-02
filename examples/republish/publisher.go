@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/syntropynet/data-layer-sdk/pkg/options"
-	"github.com/syntropynet/data-layer-sdk/pkg/service"
+	"github.com/synternet/data-layer-sdk/pkg/options"
+	"github.com/synternet/data-layer-sdk/pkg/service"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 

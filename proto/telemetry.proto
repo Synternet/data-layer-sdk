@@ -1,6 +1,6 @@
 syntax = "proto3";
 package service;
-option go_package = "github.com/syntropynet/data-layer-sdk/pkg/service";
+option go_package = "github.com/synternet/data-layer-sdk/pkg/service";
 
 message Telemetry {
 	string nonce = 1;
