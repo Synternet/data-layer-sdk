@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"github.com/syntropynet/data-layer-sdk/pkg/codec"
+	"github.com/synternet/data-layer-sdk/pkg/codec"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 )
@@ -107,7 +107,7 @@ func (o *Options) setDefaults() {
 	o.PubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger}
 	o.SubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger}
 	o.PrivateKey = pkey
-	o.Prefix = "syntropy"
+	o.Prefix = "synternet"
 	o.Name = "rnd"
 	o.TelemetryPeriod = time.Second * 10
 	o.Params = make(map[string]any)

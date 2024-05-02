@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"github.com/syntropynet/data-layer-sdk/pkg/options"
+	"github.com/synternet/data-layer-sdk/pkg/options"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -28,8 +28,10 @@ type Message interface {
 	QueueName() string
 }
 
-type MessageHandler func(msg Message)
-type ServiceHandler func(msg Message) (proto.Message, error)
+type (
+	MessageHandler func(msg Message)
+	ServiceHandler func(msg Message) (proto.Message, error)
+)
 
 type natsMessage struct {
 	*nats.Msg

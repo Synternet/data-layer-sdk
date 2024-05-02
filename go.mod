@@ -1,4 +1,4 @@
-module github.com/syntropynet/data-layer-sdk
+module github.com/synternet/data-layer-sdk
 
 go 1.21
 

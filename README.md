@@ -1,32 +1,32 @@
-# Syntropy Data Layer SDK
+# Synternet Data Layer SDK
 
-Welcome to the [Data Layer SDK](https://github.com/SyntropyNet/data-layer-sdk) documentation. This SDK enables seamless integration with our Data Layer solution, allowing you to harness the power of real-time data streams in your Golang applications.
+Welcome to the [Data Layer SDK](https://github.com/Synternet/data-layer-sdk) documentation. This SDK enables seamless integration with our Data Layer solution, allowing you to harness the power of real-time data streams in your Golang applications.
 
-[data-layer-sdk](https://github.com/SyntropyNet/data-layer-sdk) is a [Golang library](https://github.com/SyntropyNet/data-layer-sdk) designed specifically for the Syntropy Data Layer project. Powered by the NATS messaging system, [data-layer-sdk](https://github.com/SyntropyNet/data-layer-sdk) abstracts away most of the intricate details of interacting 
-with the Data Layer Broker network and the Blockchain to offer seamless integration between your Golang applications and the Syntropy Data Layer platform.
+[data-layer-sdk](https://github.com/Synternet/data-layer-sdk) is a [Golang library](https://github.com/Synternet/data-layer-sdk) designed specifically for the Synternet Data Layer project. Powered by the NATS messaging system, [data-layer-sdk](https://github.com/Synternet/data-layer-sdk) abstracts away most of the intricate details of interacting
+with the Data Layer Broker network and the Blockchain to offer seamless integration between your Golang applications and the Synternet Data Layer platform.
 
 # Features
 
-- **Subscribe to Existing Data Streams**: Easily subscribe to pre-existing data streams within the Syntropy Data Layer. Receive real-time updates and harness the power of real-time data insights in your Golang applications.
+- **Subscribe to Existing Data Streams**: Easily subscribe to pre-existing data streams within the Synternet Data Layer. Receive real-time updates and harness the power of real-time data insights in your Golang applications.
 
 - **Publish New Data Streams**: Create and publish your own data streams directly from your Golang applications. Share data with other participants in the Data Layer, facilitating collaboration and enabling the creation of innovative data-driven solutions.
 
-- **Support for JSON Messages**: Leverage the flexibility and interoperability of JSON messages. [data-layer-sdk](https://github.com/SyntropyNet/data-layer-sdk) provides support for handling JSON data, making it easy to work with complex data structures and seamlessly integrate with other systems and platforms. Even more, the SDK allows adding your own type marshallers to support any wire data format.
+- **Support for JSON Messages**: Leverage the flexibility and interoperability of JSON messages. [data-layer-sdk](https://github.com/Synternet/data-layer-sdk) provides support for handling JSON data, making it easy to work with complex data structures and seamlessly integrate with other systems and platforms. Even more, the SDK allows adding your own type marshallers to support any wire data format.
 
-- **Customizable Connection Options**: Tailor the connection options to suit your specific needs. Configure parameters such as connection timeouts, retry mechanisms, and authentication details to ensure a secure and reliable connection to the Syntropy Data Layer platform.
+- **Customizable Connection Options**: Tailor the connection options to suit your specific needs. Configure parameters such as connection timeouts, retry mechanisms, and authentication details to ensure a secure and reliable connection to the Synternet Data Layer platform.
 
 # Installation
 
 To install the SDK for Data Layer, you can use Go modules or include it as a dependency in your project. Here's an example of how to add it to your project:
 
 ```shell
-go get github.com/SyntropyNet/data-layer-sdk
+go get github.com/synternet/data-layer-sdk
 ```
 
 Make sure to import the package in your code:
 
 ```go
-import "github.com/SyntropyNet/data-layer-sdk"
+import "github.com/synternet/data-layer-sdk"
 ```
 
 ## Getting started
@@ -79,7 +79,7 @@ func (p *Publisher) subscribe() error {
 
 # Contributing
 
-We welcome contributions from the community! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/SyntropyNet/data-layer-sdk). We appreciate your feedback and collaboration in making this SDK even better. 
+We welcome contributions from the community! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/Synternet/data-layer-sdk). We appreciate your feedback and collaboration in making this SDK even better.
 
 ## Contribution Guidelines
 

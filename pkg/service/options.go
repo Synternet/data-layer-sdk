@@ -16,7 +16,7 @@ import (
 
 	"github.com/cosmos/btcutil/base58"
 	"github.com/nats-io/nkeys"
-	"github.com/syntropynet/data-layer-sdk/pkg/options"
+	"github.com/synternet/data-layer-sdk/pkg/options"
 )
 
 // WithParam adds a key-value pair to the configuration of the publisher.
