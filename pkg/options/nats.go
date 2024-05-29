@@ -3,15 +3,20 @@ package options
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/nats-io/nats.go"
+	"github.com/synternet/data-layer-sdk/pkg/config"
 )
 
 // MakeNats is a convenience function to create NATS connection from various parameters.
 func MakeNats(name, urls, userCreds, nkey, jwt, caCert, clientCert, clientKey string) (*nats.Conn, error) {
 	if urls == "" {
-		slog.Info("Will use NATS stub")
-		return nil, nil
+		urls := strings.Join(config.DefaultNetworks.GetDefault().URLs, ",")
+		if urls == "" {
+			slog.Info("Will use NATS stub")
+			return nil, nil
+		}
 	}
 
 	// Connect Options.
