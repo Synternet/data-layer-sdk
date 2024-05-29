@@ -1,6 +1,6 @@
 package config
 
-var DefaultNetworks = Networks{
+var defaultNetworks = Networks{
 	Default: "stub",
 	All: map[string]*Network{
 		"stub": {

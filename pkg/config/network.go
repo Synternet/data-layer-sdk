@@ -1,32 +1,41 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Networks struct {
 	Default string
 	All     map[string]*Network
 }
 
-type Network struct {
-	URLs []string
-}
-
-// SetDefault changes default network.
-func (n *Networks) SetDefault(name string) error {
-	_, exists := n.All[name]
+// SetDefaultNetwork changes default network.
+func SetDefaultNetwork(name string) error {
+	_, exists := defaultNetworks.All[name]
 
 	if !exists {
 		return fmt.Errorf("network '%s' does not exist", name)
 	}
 
-	n.Default = name
+	defaultNetworks.Default = name
 
 	return nil
 }
 
-// GetDefault returns a default network.
-func (n *Networks) GetDefault() Network {
-	network := n.All[n.Default]
+// DefaultNetwork returns a default network.
+func DefaultNetwork() *Network {
+	network := defaultNetworks.All[defaultNetworks.Default]
 
-	return *network
+	return network
+}
+
+type Network struct {
+	URLs []string
+}
+
+func (n *Network) JoinURLs() string {
+	urls := strings.Join(n.URLs, ",")
+
+	return urls
 }
