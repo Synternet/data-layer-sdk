@@ -11,7 +11,7 @@ import (
 // MakeNats is a convenience function to create NATS connection from various parameters.
 func MakeNats(name, urls, userCreds, nkey, jwt, caCert, clientCert, clientKey string) (*nats.Conn, error) {
 	if urls == "" {
-		urls = network.Default().JoinURLs()
+		urls = network.Default().Urls()
 		if urls == "" {
 			slog.Info("Will use NATS stub")
 			return nil, nil
