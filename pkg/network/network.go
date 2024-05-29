@@ -7,7 +7,7 @@ import (
 
 type Networks struct {
 	Default string
-	All     map[string]*Network
+	All     map[string]Network
 }
 
 // SetDefault changes default network.
@@ -23,11 +23,25 @@ func SetDefault(name string) error {
 	return nil
 }
 
+// AddNetwork adds a network.
+func AddNetwork(name string, network Network) error {
+	_, exists := defaultNetworks.All[name]
+
+	if exists {
+		return fmt.Errorf("network '%s' already exists", name)
+	}
+
+	// TODO: NATS checks network URLs when connecting, but feedback can be given earlier - here.
+	defaultNetworks.All[name] = network
+
+	return nil
+}
+
 // Default returns a default network.
 func Default() Network {
 	network := defaultNetworks.All[defaultNetworks.Default]
 
-	return *network
+	return network
 }
 
 type Network struct {

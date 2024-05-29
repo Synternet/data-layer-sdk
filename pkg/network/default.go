@@ -2,7 +2,7 @@ package network
 
 var defaultNetworks = Networks{
 	Default: "stub",
-	All: map[string]*Network{
+	All: map[string]Network{
 		// Stub for testing. Does not establish actual network connection.
 		"stub": {
 			URLs: []string{},
