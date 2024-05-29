@@ -23,8 +23,8 @@ func SetDefault(name string) error {
 	return nil
 }
 
-// AddNetwork adds a network.
-func AddNetwork(name string, network Network) error {
+// Add adds a network.
+func Add(name string, network Network) error {
 	_, exists := defaultNetworks.All[name]
 
 	if exists {
