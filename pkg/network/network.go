@@ -1,4 +1,4 @@
-package config
+package network
 
 import (
 	"fmt"
@@ -10,8 +10,8 @@ type Networks struct {
 	All     map[string]*Network
 }
 
-// SetDefaultNetwork changes default network.
-func SetDefaultNetwork(name string) error {
+// SetDefault changes default network.
+func SetDefault(name string) error {
 	_, exists := defaultNetworks.All[name]
 
 	if !exists {
@@ -23,8 +23,8 @@ func SetDefaultNetwork(name string) error {
 	return nil
 }
 
-// DefaultNetwork returns a default network.
-func DefaultNetwork() *Network {
+// Default returns a default network.
+func Default() *Network {
 	network := defaultNetworks.All[defaultNetworks.Default]
 
 	return network

@@ -1,4 +1,4 @@
-package config
+package network
 
 var defaultNetworks = Networks{
 	Default: "stub",
