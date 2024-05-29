@@ -32,6 +32,7 @@ func Add(name string, network Network) error {
 	}
 
 	// TODO: NATS checks network URLs when connecting, but feedback can be given earlier - here.
+	// This needs to be thought through since it duplicates logic of checking URLs.
 	defaultNetworks.All[name] = network
 
 	return nil
