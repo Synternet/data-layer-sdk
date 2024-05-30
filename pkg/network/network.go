@@ -49,7 +49,7 @@ type Network struct {
 	urls []string
 }
 
-// JoinUrls is a utility function to join URLs into a string.
+// Urls is a utility function to join URLs into a string.
 func (n Network) Urls() string {
 	urls := strings.Join(n.urls, ",")
 
