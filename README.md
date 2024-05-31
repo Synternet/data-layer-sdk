@@ -77,6 +77,15 @@ func (p *Publisher) subscribe() error {
 }
 ```
 
+# Tools
+
+## User credentials generator
+
+CLI tool to generate user credentials (`JWT`, `NKEY`) from account credentials (`NKEY`) issued in [Portal](https://portal.synternet.com/). To learn more about Synternet used NATS auth model click [here](https://docs.nats.io/running-a-nats-service/configuration/securing_nats/auth_intro/jwt)
+```bash
+go run github.com/synternet/data-layer-sdk/cmd/gen-user@latest
+```
+
 # Contributing
 
 We welcome contributions from the community! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/Synternet/data-layer-sdk). We appreciate your feedback and collaboration in making this SDK even better.
