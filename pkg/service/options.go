@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
@@ -55,7 +56,7 @@ func WithNats(nc options.NatsConn) options.Option {
 // WithPubNats sets up preconfigured NATS connector specifically for publishing.
 func WithPubNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
-		if nc == nil {
+		if reflect.ValueOf(nc).IsNil() {
 			return
 		}
 		o.PubNats = nc
@@ -67,7 +68,7 @@ func WithPubNats(nc options.NatsConn) options.Option {
 // NOTE: This will also set ReqNats for compatibility.
 func WithSubNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
-		if nc == nil {
+		if reflect.ValueOf(nc).IsNil() {
 			return
 		}
 		o.SubNats = nc
@@ -78,7 +79,7 @@ func WithSubNats(nc options.NatsConn) options.Option {
 // WithReqNats sets up preconfigured NATS connector specifically for request/reply.
 func WithReqNats(nc options.NatsConn) options.Option {
 	return func(o *options.Options) {
-		if nc == nil {
+		if reflect.ValueOf(nc).IsNil() {
 			return
 		}
 		o.ReqNats = nc
