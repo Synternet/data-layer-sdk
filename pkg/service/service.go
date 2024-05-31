@@ -110,6 +110,7 @@ func (b *Service) Configure(opts ...options.Option) error {
 func (b *Service) run() error {
 	sub, err := b.Subscribe(b.handleTelemetryPing, "telemetry", "ping")
 	if err != nil {
+		err = fmt.Errorf("Telemetry subscription failed: %w", err)
 		b.Cancel(err)
 		return err
 	}
