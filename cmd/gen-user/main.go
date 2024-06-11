@@ -5,9 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
-	"github.com/synternet/data-layer-sdk/pkg/options"
+	"strings"
 )
+
+const consoleTemplate = `User NKEY: %s
+User JWT: %s
+`
 
 const credsTemplate = `-----BEGIN NATS USER JWT-----
 %s
@@ -21,11 +24,13 @@ NKEYs are sensitive and should be treated as secrets.
 %s
 ------END USER NKEY SEED------
 
-*************************************************************`
+*************************************************************
+`
 
 func main() {
-	creds := flag.Bool("creds", false, "Generate Creds file contents instead.")
-	h := flag.Bool("h", false, "Display this help")
+	creds := flag.Bool("creds", false, "Generates Creds file contents instead.")
+	h := flag.Bool("h", false, "Display this help.")
+	jsManager := flag.Bool("js", false, "Enables JetStream Manager option.")
 	flag.Parse()
 
 	if *h {
@@ -33,29 +38,40 @@ func main() {
 		return
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	for {
+	inStat, err := os.Stdin.Stat()
+	if err != nil || inStat.Size() == 0 {
 		fmt.Print("Enter Seed(Account NKEY): ")
-		scanner.Scan()
-		seed := scanner.Text()
-
-		if seed == "" {
-			return
-		}
-		fmt.Println()
-
-		nkey, jwt, err := options.CreateUser(seed)
-		if err != nil {
-			panic(err)
-		}
-
-		if *creds {
-			fmt.Printf(credsTemplate, *jwt, *nkey)
-			fmt.Println()
-		} else {
-			fmt.Println("User NKEY: ", *nkey)
-			fmt.Println("User JWT: ", *jwt)
-		}
-		fmt.Println()
 	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		fatal("Seed scanning failed")
+	}
+
+	seed := []byte(strings.TrimSpace(scanner.Text()))
+	if len(seed) == 0 {
+		fatal("Account seed is empty")
+	}
+
+	var opts []Opt
+	if *jsManager {
+		opts = append(opts, JetStreamManagerOpt)
+	}
+	userSeed, jwt, err := createUser(seed, opts)
+	if err != nil {
+		fatal("Failed to create user: %s", err)
+	}
+
+	template := consoleTemplate
+	if *creds {
+		template = credsTemplate
+	}
+
+	fmt.Printf(template, jwt, userSeed)
+}
+
+func fatal(template string, values ...interface{}) {
+	fmt.Printf(template, values...)
+	fmt.Println()
+	os.Exit(1)
 }
