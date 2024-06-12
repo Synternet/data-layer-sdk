@@ -13,7 +13,7 @@ import (
 	"github.com/nats-io/nkeys"
 )
 
-func createUser(accSeed []byte, opts []Opt) (string, string, error) {
+func createUser(accSeed []byte, opts ...Opt) (string, string, error) {
 	accKeys, err := nkeys.FromSeed(accSeed)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get account keys: %w", err)

@@ -57,7 +57,7 @@ func main() {
 	if *jsManager {
 		opts = append(opts, JetStreamManagerOpt)
 	}
-	userSeed, jwt, err := createUser(seed, opts)
+	userSeed, jwt, err := createUser(seed, opts...)
 	if err != nil {
 		fatal("Failed to create user: %s", err)
 	}
@@ -71,7 +71,6 @@ func main() {
 }
 
 func fatal(template string, values ...interface{}) {
-	fmt.Printf(template, values...)
-	fmt.Println()
+	fmt.Fprintln(os.Stderr, fmt.Sprintf(template, values...))
 	os.Exit(1)
 }
