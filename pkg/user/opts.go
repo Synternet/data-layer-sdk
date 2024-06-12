@@ -1,16 +1,16 @@
-package main
+package creds
 
 import "fmt"
 
 type Opt func(map[string]interface{}) error
 
 const (
-	KeyNats             = "nats"
-	KeyJetStreamManager = "jetstream_manager"
+	keyNats             = "nats"
+	keyJetStreamManager = "jetstream_manager"
 )
 
 func JetStreamManagerOpt(m map[string]interface{}) error {
-	natsUser, ok := m[KeyNats]
+	natsUser, ok := m[keyNats]
 	if !ok {
 		return fmt.Errorf("failed to inject JetStream manager option, as there is no nats setup")
 	}
@@ -19,6 +19,6 @@ func JetStreamManagerOpt(m map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("failed to inject JetStream manager option, as nats is not a map value")
 	}
-	natsUserMap[KeyJetStreamManager] = true
+	natsUserMap[keyJetStreamManager] = true
 	return nil
 }

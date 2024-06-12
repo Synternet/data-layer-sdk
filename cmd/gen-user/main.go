@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	user "github.com/synternet/data-layer-sdk/pkg/user"
 )
 
 const consoleTemplate = `User NKEY: %s
@@ -28,7 +30,7 @@ NKEYs are sensitive and should be treated as secrets.
 `
 
 func main() {
-	creds := flag.Bool("creds", false, "Generates Creds file contents instead.")
+	credsFormat := flag.Bool("creds", false, "Generates Creds file contents instead.")
 	h := flag.Bool("h", false, "Display this help.")
 	jsManager := flag.Bool("js", false, "Enables JetStream Manager option.")
 	flag.Parse()
@@ -53,17 +55,17 @@ func main() {
 		fatal("Account seed is empty")
 	}
 
-	var opts []Opt
+	var opts []user.Opt
 	if *jsManager {
-		opts = append(opts, JetStreamManagerOpt)
+		opts = append(opts, user.JetStreamManagerOpt)
 	}
-	userSeed, jwt, err := createUser(seed, opts...)
+	userSeed, jwt, err := user.CreateCreds(seed, opts...)
 	if err != nil {
 		fatal("Failed to create user: %s", err)
 	}
 
 	template := consoleTemplate
-	if *creds {
+	if *credsFormat {
 		template = credsTemplate
 	}
 

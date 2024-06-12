@@ -1,4 +1,4 @@
-package main
+package creds
 
 import (
 	"crypto/sha512"
@@ -13,7 +13,7 @@ import (
 	"github.com/nats-io/nkeys"
 )
 
-func createUser(accSeed []byte, opts ...Opt) (string, string, error) {
+func CreateCreds(accSeed []byte, opts ...Opt) (seed string, jwt string, err error) {
 	accKeys, err := nkeys.FromSeed(accSeed)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get account keys: %w", err)
@@ -50,12 +50,12 @@ func createUser(accSeed []byte, opts ...Opt) (string, string, error) {
 		payload = payloadMap
 	}
 
-	jwt, err := encodeJWT(accKeys, payload)
+	userJwt, err := encodeJWT(accKeys, payload)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate user claims: %w", err)
 	}
 
-	return string(userSeed), jwt, nil
+	return string(userSeed), userJwt, nil
 }
 
 func createUserClaims(accKeys, userKeys nkeys.KeyPair) (*jwt.UserClaims, error) {
