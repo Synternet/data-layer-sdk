@@ -10,8 +10,8 @@ import (
 	user "github.com/synternet/data-layer-sdk/pkg/user"
 )
 
-const consoleTemplate = `User NKEY: %s
-User JWT: %s
+const consoleTemplate = `User JWT: %s
+User NKEY: %s
 `
 
 const credsTemplate = `-----BEGIN NATS USER JWT-----
@@ -69,7 +69,7 @@ func main() {
 		template = credsTemplate
 	}
 
-	fmt.Printf(template, userSeed, jwt)
+	fmt.Printf(template, jwt, userSeed)
 }
 
 func fatal(template string, values ...interface{}) {
