@@ -69,7 +69,7 @@ func main() {
 		template = credsTemplate
 	}
 
-	fmt.Printf(template, jwt, userSeed)
+	fmt.Printf(template, userSeed, jwt)
 }
 
 func fatal(template string, values ...interface{}) {
