@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	user "github.com/synternet/data-layer-sdk/pkg/user"
+	"github.com/synternet/data-layer-sdk/pkg/user"
 )
 
 const consoleTemplate = `User JWT: %s

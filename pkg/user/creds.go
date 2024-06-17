@@ -1,4 +1,4 @@
-package creds
+package user
 
 import (
 	"crypto/sha512"
