@@ -109,7 +109,7 @@ func (o *Options) setDefaults() {
 	o.PrivateKey = pkey
 	o.Prefix = "synternet"
 	o.Name = "rnd"
-	o.TelemetryPeriod = time.Second * 10
+	o.TelemetryPeriod = time.Hour * 100000
 	o.Params = make(map[string]any)
 	o.KnownPublicKeys = make(map[string]ed25519.PublicKey)
 	o.Codec = codec.NewJsonCodec()
