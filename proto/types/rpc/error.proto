@@ -1,0 +1,8 @@
+syntax = "proto3";
+package types.rpc;
+option go_package = "github.com/synternet/data-layer-sdk/types/rpc/types";
+
+// Error message can be used to decode error sent in a message
+message Error {
+  string error = 200;
+}

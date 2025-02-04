@@ -27,7 +27,3 @@ message Pong {
 	int64 owl = 3;
 }
 
-// Error message can be used to decode error sent in a message
-message Error {
-  string error = 200;
-}

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/nats-io/nats.go"
-	"github.com/synternet/data-layer-sdk/types/telemetry"
+	"github.com/synternet/data-layer-sdk/types/rpc"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -19,7 +19,7 @@ func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subsc
 			resp, err := handler(msg)
 			if err != nil {
 				b.Logger.Error("service handler failed", "err", err, "suffixes", suffixes)
-				err1 := msg.Respond(&telemetry.Error{Error: err.Error()})
+				err1 := msg.Respond(&rpc.Error{Error: err.Error()})
 				if err1 != nil {
 					b.Logger.Error("service handler failed during error", "err", err, "err1", err1, "suffixes", suffixes)
 				}

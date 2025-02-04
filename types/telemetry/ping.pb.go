@@ -141,54 +141,6 @@ func (x *Pong) GetOwl() int64 {
 	return 0
 }
 
-// Error message can be used to decode error sent in a message
-type Error struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Error string `protobuf:"bytes,200,opt,name=error,proto3" json:"error,omitempty"`
-}
-
-func (x *Error) Reset() {
-	*x = Error{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_types_telemetry_ping_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Error) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Error) ProtoMessage() {}
-
-func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_types_telemetry_ping_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Error.ProtoReflect.Descriptor instead.
-func (*Error) Descriptor() ([]byte, []int) {
-	return file_types_telemetry_ping_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *Error) GetError() string {
-	if x != nil {
-		return x.Error
-	}
-	return ""
-}
-
 var File_types_telemetry_ping_proto protoreflect.FileDescriptor
 
 var file_types_telemetry_ping_proto_rawDesc = []byte{
@@ -205,8 +157,6 @@ var file_types_telemetry_ping_proto_rawDesc = []byte{
 	0x12, 0x1c, 0x0a, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x03, 0x52, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x12, 0x10,
 	0x0a, 0x03, 0x6f, 0x77, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x6f, 0x77, 0x6c,
-	0x22, 0x1e, 0x0a, 0x05, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x15, 0x0a, 0x05, 0x65, 0x72, 0x72,
-	0x6f, 0x72, 0x18, 0xc8, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
 	0x32, 0x60, 0x0a, 0x0b, 0x50, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
 	0x42, 0x0a, 0x08, 0x50, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x6e, 0x67, 0x12, 0x15, 0x2e, 0x74, 0x79,
 	0x70, 0x65, 0x73, 0x2e, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x2e, 0x50, 0x69,
@@ -239,11 +189,10 @@ func file_types_telemetry_ping_proto_rawDescGZIP() []byte {
 	return file_types_telemetry_ping_proto_rawDescData
 }
 
-var file_types_telemetry_ping_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_types_telemetry_ping_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_types_telemetry_ping_proto_goTypes = []interface{}{
-	(*Ping)(nil),  // 0: types.telemetry.Ping
-	(*Pong)(nil),  // 1: types.telemetry.Pong
-	(*Error)(nil), // 2: types.telemetry.Error
+	(*Ping)(nil), // 0: types.telemetry.Ping
+	(*Pong)(nil), // 1: types.telemetry.Pong
 }
 var file_types_telemetry_ping_proto_depIdxs = []int32{
 	0, // 0: types.telemetry.PingService.PingPong:input_type -> types.telemetry.Ping
@@ -285,18 +234,6 @@ func file_types_telemetry_ping_proto_init() {
 				return nil
 			}
 		}
-		file_types_telemetry_ping_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Error); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -304,7 +241,7 @@ func file_types_telemetry_ping_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_types_telemetry_ping_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
