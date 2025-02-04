@@ -1,0 +1,12 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/synternet/data-layer-sdk
+plugins:
+  - plugin: go
+    out: ../
+    opt: paths=source_relative
+  - plugin: go-grpc
+    out: ../
+    opt: paths=source_relative

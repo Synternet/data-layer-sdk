@@ -1,0 +1,9 @@
+syntax = "proto3";
+package types.telemetry;
+option go_package = "github.com/synternet/data-layer-sdk/types/telemetry/types";
+
+// Telemetry message will be sent at a {pub_prefix}.{pub_name}.telemetry subject periodically.
+message Telemetry {
+	string nonce = 1;
+	map<string, string> status = 2;
+}

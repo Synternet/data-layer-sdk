@@ -1,0 +1,33 @@
+syntax = "proto3";
+package types.telemetry;
+option go_package = "github.com/synternet/data-layer-sdk/types/telemetry/types";
+
+import "types/rpc/options.proto";
+
+// PingService allows measuring latency by obtaining message flight time and recording the timestamps.
+// The resulting subject is {pub_prefix}.{pub_name}.telemetry.ping
+service PingService {
+	option (rpc.subject_prefix) = "telemetry";
+
+	rpc PingPong(Ping) returns (Pong) {
+		option (rpc.subject_suffix) = "ping";
+	}
+}
+
+// Ping is the message that is sent out to a publisher
+message Ping {
+	string nonce = 1;
+	int64 timestamp  = 2;
+}
+
+// Pong is the message that is a response to Ping message
+message Pong {
+	string nonce =1;
+	int64 timestamp = 2;
+	int64 owl = 3;
+}
+
+// Error message can be used to decode error sent in a message
+message Error {
+  string error = 200;
+}

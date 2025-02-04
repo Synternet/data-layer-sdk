@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types.rpc;
+option go_package = "github.com/synternet/data-layer-sdk/types/rpc/types";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.ServiceOptions {
+  // Optional prefix for all methods in a service
+  string subject_prefix = 50001;
+}
+
+extend google.protobuf.MethodOptions {
+  // Optional suffix to override default method name in a subject
+  string subject_suffix = 50002;
+}
