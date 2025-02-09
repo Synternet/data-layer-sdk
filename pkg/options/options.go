@@ -104,8 +104,9 @@ func (o *Options) setDefaults() {
 	}
 	o.Logger = slog.Default()
 	o.SetContext(context.Background())
-	o.PubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger}
-	o.SubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger}
+	o.PubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger.With("NATS", "Pub")}
+	o.SubNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger.With("NATS", "Sub")}
+	o.ReqNats = &natsStub{Verbose: &o.VerboseLog, logger: o.Logger.With("NATS", "Req")}
 	o.PrivateKey = pkey
 	o.Prefix = "synternet"
 	o.Name = "rnd"
