@@ -1,0 +1,22 @@
+with-expecter: true
+packages:
+  github.com/synternet/data-layer-sdk/pkg/service:
+    config:
+      filename: "mock_{{.InterfaceName}}.go"
+      dir: "{{.InterfaceDir}}"
+      mockname: "Mock{{.InterfaceName}}"
+      outpkg: "{{.PackageName}}"
+      inpackage: True
+    interfaces:
+      Message:
+      JetStreamer:
+  github.com/synternet/data-layer-sdk/types/telemetry:
+    config:
+      filename: "mock_{{.InterfaceName}}.go"
+      dir: "{{.InterfaceDir}}"
+      mockname: "Mock{{.InterfaceName}}"
+      outpkg: "{{.PackageName}}"
+      inpackage: True
+    interfaces:
+      PingServiceClient:
+      PingServiceServer:
