@@ -5,6 +5,51 @@ import (
 	"testing"
 )
 
+func TestNewSubject(t *testing.T) {
+	type args struct {
+		prefix   string
+		suffixes []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want Subject
+	}{
+		{
+			name: "simple",
+			args: args{prefix: "prefix", suffixes: []string{"a", "b"}},
+			want: "prefix.a.b",
+		},
+		{
+			name: "empty prefix",
+			args: args{prefix: "", suffixes: []string{"a", "b"}},
+			want: "a.b",
+		},
+		{
+			name: "empty suffix",
+			args: args{prefix: "prefix", suffixes: []string{"", "b"}},
+			want: "prefix.b",
+		},
+		{
+			name: "spaces",
+			args: args{prefix: " prefix ", suffixes: []string{"", "b"}},
+			want: "prefix.b",
+		},
+		{
+			name: "only prefix",
+			args: args{prefix: " prefix ", suffixes: []string{}},
+			want: "prefix",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewSubject(tt.args.prefix, tt.args.suffixes...); got != tt.want {
+				t.Errorf("NewSubject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestSubject_Tokens(t *testing.T) {
 	tokens := Subject("a.b.c.>").Tokens()
 	want := []string{"a", "b", "c", ">"}

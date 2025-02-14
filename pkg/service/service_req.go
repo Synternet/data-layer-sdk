@@ -10,6 +10,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// RpcInbox returns a unique subject
+func (b *Service) RpcInbox(suffixes ...string) string {
+	return NewSubject(nats.NewInbox(), suffixes...).String()
+}
+
 // Serve is a convenience method to serve a service subject. It acts the same as Subscribe, but takes `ServiceHandler` instead, and will respond
 // either with Error type or response from the handler. Serve will use ReqNats connection.
 func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
@@ -32,6 +37,35 @@ func (b *Service) Serve(handler ServiceHandler, suffixes ...string) (*nats.Subsc
 		},
 		b.Subject(suffixes...),
 	)
+}
+
+// PublishToRpc will sign the message and publish it to a specific subject constructed from subject tokens.
+// PublishToRpc will use ReqNats connection.
+func (b *Service) PublishToRpc(msg proto.Message, replyTo string, tokens ...string) error {
+	payload, err := b.Codec.Encode(nil, msg)
+	if err != nil {
+		return err
+	}
+	return b.PublishBufToRpc(payload, replyTo, tokens...)
+}
+
+// PublishBufToRpc is the same as PublishBufTo, but uses ReqNats.
+func (b *Service) PublishBufToRpc(buf []byte, replyTo string, tokens ...string) error {
+	if b.ReqNats == nil {
+		return ErrPubConnection
+	}
+	msg, err := b.makeMsg(buf, replyTo, strings.Join(tokens, "."))
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-b.Context.Done():
+		b.Logger.Info("PublishBufTo cancelled", "err", b.Context.Err(), "queue_size", len(b.publishCh))
+		return b.Context.Err()
+	case b.publishCh <- msg:
+	}
+	return nil
 }
 
 // RequestFrom requests a reply from a subject using ReqNats connection. The subject will be constructed from tokens.
@@ -63,7 +97,7 @@ func (b *Service) RequestBufFrom(ctx context.Context, buf []byte, tokens ...stri
 		return nil, ErrReqConnection
 	}
 
-	msg, err := b.makeMsg(buf, strings.Join(tokens, "."))
+	msg, err := b.makeMsg(buf, b.RpcInbox(), strings.Join(tokens, "."))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +122,7 @@ func (b *Service) Respond(nmsg Message, msg proto.Message) error {
 
 // RespondBuf is the same as Respond, but will respond with raw bytes.
 func (b *Service) RespondBuf(msg Message, buf []byte) error {
-	reply, err := b.makeMsg(buf, "")
+	reply, err := b.makeMsg(buf, "", "")
 	if err != nil {
 		return err
 	}

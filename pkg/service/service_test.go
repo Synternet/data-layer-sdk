@@ -24,7 +24,7 @@ func TestBase_MakeMsgVerify(t *testing.T) {
 		t.Error("identity is empty")
 	}
 
-	msg, err := publisher.makeMsg([]byte("lore ipsum"), "test.test")
+	msg, err := publisher.makeMsg([]byte("lore ipsum"), "_INBOX.reply", "test.test")
 	if err != nil {
 		t.Error("failure: ", err.Error())
 		t.Fail()
@@ -54,7 +54,20 @@ func TestBase_Verify(t *testing.T) {
 			"message signed and empty peers",
 			[]string{},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
+				if err != nil {
+					t.Error("failure: ", err.Error())
+					t.Fail()
+				}
+				return msg
+			},
+			false,
+		},
+		{
+			"message signed and empty peers with reply",
+			[]string{},
+			func(t *testing.T, b *Service) *nats.Msg {
+				msg, err := b.makeMsg([]byte("lore ipsum"), "_INBOX.reply", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()
@@ -67,7 +80,7 @@ func TestBase_Verify(t *testing.T) {
 			"message w/o identity and empty peers",
 			[]string{},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()
@@ -81,7 +94,7 @@ func TestBase_Verify(t *testing.T) {
 			"message w/o signature and empty peers",
 			[]string{},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()
@@ -95,7 +108,7 @@ func TestBase_Verify(t *testing.T) {
 			"modified message signed and empty peers",
 			[]string{},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()
@@ -109,7 +122,20 @@ func TestBase_Verify(t *testing.T) {
 			"message signed and good peers",
 			[]string{testPeer},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
+				if err != nil {
+					t.Error("failure: ", err.Error())
+					t.Fail()
+				}
+				return msg
+			},
+			false,
+		},
+		{
+			"message signed and good peers with reply",
+			[]string{testPeer},
+			func(t *testing.T, b *Service) *nats.Msg {
+				msg, err := b.makeMsg([]byte("lore ipsum"), "_INBOX.reply", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()
@@ -122,7 +148,7 @@ func TestBase_Verify(t *testing.T) {
 			"message signed and wrong peers",
 			[]string{"CspLUFkBWXdimZ2b1sEo4nYpCRDdDpnCEhjWbNVKPmEN"},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()
@@ -135,7 +161,7 @@ func TestBase_Verify(t *testing.T) {
 			"message w/o identity signed with peers",
 			[]string{testPeer},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()
@@ -149,7 +175,7 @@ func TestBase_Verify(t *testing.T) {
 			"message w/o signature with peers",
 			[]string{testPeer},
 			func(t *testing.T, b *Service) *nats.Msg {
-				msg, err := b.makeMsg([]byte("lore ipsum"), "test.test")
+				msg, err := b.makeMsg([]byte("lore ipsum"), "", "test.test")
 				if err != nil {
 					t.Error("failure: ", err.Error())
 					t.Fail()

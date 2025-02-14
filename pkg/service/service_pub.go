@@ -32,7 +32,7 @@ func (b *Service) PublishBufTo(buf []byte, tokens ...string) error {
 	if b.PubNats == nil {
 		return ErrPubConnection
 	}
-	msg, err := b.makeMsg(buf, strings.Join(tokens, "."))
+	msg, err := b.makeMsg(buf, "", strings.Join(tokens, "."))
 	if err != nil {
 		return err
 	}
