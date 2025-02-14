@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/synternet/data-layer-sdk/types/telemetry"
+	"github.com/synternet/data-layer-sdk/x/synternet/telemetry"
 	"google.golang.org/protobuf/proto"
 )
 

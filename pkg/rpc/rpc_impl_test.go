@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/synternet/data-layer-sdk/pkg/rpc"
-	rpctypes "github.com/synternet/data-layer-sdk/types/rpc"
+	rpctypes "github.com/synternet/data-layer-sdk/x/synternet/rpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

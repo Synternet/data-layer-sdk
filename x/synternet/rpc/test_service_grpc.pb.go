@@ -39,7 +39,7 @@ func NewTestServiceClient(cc grpc.ClientConnInterface) TestServiceClient {
 
 func (c *testServiceClient) Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error) {
 	out := new(TestResponse)
-	err := c.cc.Invoke(ctx, "/types.rpc.TestService/Test", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/synternet.rpc.TestService/Test", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (c *testServiceClient) Test(ctx context.Context, in *TestRequest, opts ...g
 }
 
 func (c *testServiceClient) TestStream(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (TestService_TestStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[0], "/types.rpc.TestService/TestStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[0], "/synternet.rpc.TestService/TestStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (x *testServiceTestStreamClient) Recv() (*TestResponse, error) {
 }
 
 func (c *testServiceClient) TestStreamOnly(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (TestService_TestStreamOnlyClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[1], "/types.rpc.TestService/TestStreamOnly", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[1], "/synternet.rpc.TestService/TestStreamOnly", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (x *testServiceTestStreamOnlyClient) Recv() (*TestResponse, error) {
 }
 
 func (c *testServiceClient) TestStreamBidirectional(ctx context.Context, opts ...grpc.CallOption) (TestService_TestStreamBidirectionalClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[2], "/types.rpc.TestService/TestStreamBidirectional", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[2], "/synternet.rpc.TestService/TestStreamBidirectional", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func _TestService_Test_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/types.rpc.TestService/Test",
+		FullMethod: "/synternet.rpc.TestService/Test",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TestServiceServer).Test(ctx, req.(*TestRequest))
@@ -273,7 +273,7 @@ func (x *testServiceTestStreamBidirectionalServer) Recv() (*TestRequest, error) 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TestService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "types.rpc.TestService",
+	ServiceName: "synternet.rpc.TestService",
 	HandlerType: (*TestServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -299,5 +299,5 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "types/rpc/test_service.proto",
+	Metadata: "synternet/rpc/test_service.proto",
 }

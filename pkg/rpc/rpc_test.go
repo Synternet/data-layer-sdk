@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/synternet/data-layer-sdk/pkg/rpc"
 	service "github.com/synternet/data-layer-sdk/pkg/service"
-	rpctypes "github.com/synternet/data-layer-sdk/types/rpc"
+	rpctypes "github.com/synternet/data-layer-sdk/x/synternet/rpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -108,7 +108,7 @@ func TestRequestReplyWithError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
-	assert.Equal(t, "types.rpc.TestService.Test: negative value: a:-123 b:-321", res.Error)
+	assert.Equal(t, "synternet.rpc.TestService.Test: negative value: a:-123 b:-321", res.Error)
 	assert.Equal(t, "", res.Subject, "")
 	assert.Equal(t, map[string]string(nil), res.Header)
 

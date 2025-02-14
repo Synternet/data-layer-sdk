@@ -1,8 +1,8 @@
 syntax = "proto3";
-package types.rpc;
-option go_package = "github.com/synternet/data-layer-sdk/types/rpc/types";
+package synternet.rpc;
+option go_package = "rpc";
 
-import "types/rpc/options.proto";
+import "synternet/rpc/options.proto";
 import "google/protobuf/empty.proto";
 
 // Test service used in tests

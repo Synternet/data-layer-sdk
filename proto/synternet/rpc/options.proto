@@ -1,6 +1,6 @@
 syntax = "proto3";
-package types.rpc;
-option go_package = "github.com/synternet/data-layer-sdk/types/rpc/types";
+package synternet.rpc;
+option go_package = "rpc";
 
 import "google/protobuf/descriptor.proto";
 

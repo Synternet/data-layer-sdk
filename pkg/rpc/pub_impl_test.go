@@ -10,7 +10,7 @@ import (
 	nats "github.com/nats-io/nats.go"
 	"github.com/synternet/data-layer-sdk/pkg/rpc"
 	"github.com/synternet/data-layer-sdk/pkg/service"
-	rpctypes "github.com/synternet/data-layer-sdk/types/rpc"
+	rpctypes "github.com/synternet/data-layer-sdk/x/synternet/rpc"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )

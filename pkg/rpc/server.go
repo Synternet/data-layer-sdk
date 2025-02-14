@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
-	_ "github.com/synternet/data-layer-sdk/types/rpc"
+	_ "github.com/synternet/data-layer-sdk/x/synternet/rpc"
 )
 
 type serviceKey string

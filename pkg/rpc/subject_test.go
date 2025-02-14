@@ -85,7 +85,7 @@ func Test_deriveServiceTokens(t *testing.T) {
 }
 
 func Test_getCustomServicePrefix(t *testing.T) {
-	serviceDesc, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName("types.rpc.TestService"))
+	serviceDesc, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName("synternet.rpc.TestService"))
 	require.NoError(t, err)
 	require.NotNil(t, serviceDesc)
 
@@ -94,7 +94,7 @@ func Test_getCustomServicePrefix(t *testing.T) {
 }
 
 func Test_getCustomMethodSuffix(t *testing.T) {
-	serviceDesc, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName("types.rpc.TestService"))
+	serviceDesc, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName("synternet.rpc.TestService"))
 	require.NoError(t, err)
 	require.NotNil(t, serviceDesc)
 

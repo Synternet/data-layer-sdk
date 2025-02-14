@@ -31,7 +31,7 @@ func NewPingServiceClient(cc grpc.ClientConnInterface) PingServiceClient {
 
 func (c *pingServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
 	out := new(Pong)
-	err := c.cc.Invoke(ctx, "/types.telemetry.PingService/PingPong", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/synternet.telemetry.PingService/PingPong", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func _PingService_PingPong_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/types.telemetry.PingService/PingPong",
+		FullMethod: "/synternet.telemetry.PingService/PingPong",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PingServiceServer).PingPong(ctx, req.(*Ping))
@@ -86,7 +86,7 @@ func _PingService_PingPong_Handler(srv interface{}, ctx context.Context, dec fun
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var PingService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "types.telemetry.PingService",
+	ServiceName: "synternet.telemetry.PingService",
 	HandlerType: (*PingServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -95,5 +95,5 @@ var PingService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "types/telemetry/ping.proto",
+	Metadata: "synternet/telemetry/ping.proto",
 }

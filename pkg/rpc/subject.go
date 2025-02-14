@@ -7,7 +7,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/synternet/data-layer-sdk/pkg/service"
-	"github.com/synternet/data-layer-sdk/types/rpc"
+	"github.com/synternet/data-layer-sdk/x/synternet/rpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
