@@ -1,6 +1,6 @@
 syntax = "proto3";
 package synternet.telemetry;
-option go_package = "telemetry";
+option go_package = "github.com/synternet/data-layer-sdk/x/synternet/telemetry";
 
 import "synternet/rpc/options.proto";
 

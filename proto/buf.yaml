@@ -1,5 +1,5 @@
 version: v1
-name: github.com/Synternet/data-layer-sdk
+name: buf.build/synternet/proto
 deps:
   - buf.build/protocolbuffers/wellknowntypes
 breaking:
@@ -8,8 +8,6 @@ breaking:
 lint:
   use:
     - DEFAULT
-    - COMMENTS
-    - FILE_LOWER_SNAKE_CASE
   except:
     - COMMENT_FIELD
     - PACKAGE_VERSION_SUFFIX

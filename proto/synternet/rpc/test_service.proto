@@ -1,6 +1,6 @@
 syntax = "proto3";
 package synternet.rpc;
-option go_package = "rpc";
+option go_package = "github.com/synternet/data-layer-sdk/x/synternet/rpc";
 
 import "synternet/rpc/options.proto";
 import "google/protobuf/empty.proto";
