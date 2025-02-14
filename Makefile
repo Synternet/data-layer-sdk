@@ -1,3 +1,5 @@
+BUILD_PATH=./build
+
 .PHONY: proto
 proto:
 	cd proto && buf generate 
@@ -7,7 +9,7 @@ mocks:
 	mockery
 
 .PHONY: vulncheck
-vulncheck: $(BUILD_PATH)/
+vulncheck: 
 	GOBIN=$(BUILD_PATH) go install golang.org/x/vuln/cmd/govulncheck@latest
 	$(BUILD_PATH)/govulncheck ./...
 

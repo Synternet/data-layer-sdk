@@ -1,0 +1,44 @@
+syntax = "proto3";
+package types.rpc;
+option go_package = "github.com/synternet/data-layer-sdk/types/rpc/types";
+
+import "types/rpc/options.proto";
+import "google/protobuf/empty.proto";
+
+// Test service used in tests
+service TestService {
+  option (subject_prefix) = "override.test";
+
+  // Test Testing single request and reply
+  rpc Test(TestRequest) returns (TestResponse) {
+    option (subject_suffix) = "override.test.method";
+  }
+
+  // TestStream Testing request and streaming reply
+  rpc TestStream(TestRequest) returns (stream TestResponse) {
+    option (subject_suffix) = "override.test.stream.method";
+  }
+
+  // TestStream Testing only streaming
+  rpc TestStreamOnly(google.protobuf.Empty) returns (stream TestResponse) {
+    option (subject_suffix) = "override.test.stream.data";
+  }
+
+  // TestStreamBidirectional Testing streaming both ways
+  rpc TestStreamBidirectional(stream TestRequest) returns (stream TestResponse) {
+    option (subject_suffix) = "override.test.stream.stream";
+  }
+}
+
+
+message TestRequest {
+  float a = 1;
+  float b = 2;
+}
+
+message TestResponse {
+  float ab = 1;
+  string subject = 2;
+  map<string, string> header = 3;
+  string error = 400;
+}
