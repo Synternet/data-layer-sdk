@@ -150,7 +150,7 @@ func (s *ServiceRegistrar) startUnaryMethods(ctx context.Context, svc *serviceIn
 			return fmt.Errorf("failed to derive subject for method %s", method.MethodName)
 		}
 		slog.Debug("ServiceRegistrar", "service", svcDesc.FullName(), "method", method.MethodName, "subject", s.pub.Subject(tokens...))
-		if skipSubscription(methodDesc) {
+		if disableSubscription(methodDesc) {
 			continue
 		}
 		// Create a handler that reuses a decoder function.
@@ -165,7 +165,6 @@ func (s *ServiceRegistrar) startUnaryMethods(ctx context.Context, svc *serviceIn
 				_, err := s.pub.Unmarshal(msg, pm)
 				return err
 			}
-
 			ctx := addSubject(ctx, service.Subject(msg.Subject()))
 			ctx = addHeaders(ctx, msg.Header())
 
@@ -198,7 +197,14 @@ func (s *ServiceRegistrar) startStreamMethods(ctx context.Context, svc *serviceI
 		tokens := deriveSubject(s.prefix, svcDesc, methodDesc)
 		slog.Debug("ServiceRegistrar", "service", svcDesc.FullName(), "stream", stream.StreamName, "subject", s.pub.Subject(tokens...))
 
-		if skipSubscription(methodDesc) {
+		if disableSubscription(methodDesc) {
+			go func() {
+				serverStream := &serverStream{msg: nil, ctx: ctx, pub: s.pub, subject: s.pub.Subject(tokens...)}
+				err = stream.Handler(svc.serviceImpl, serverStream)
+				if err != nil {
+					slog.Debug("running a handler", "err", err, "service", svcDesc.FullName(), "stream", stream.StreamName, "subject", s.pub.Subject(tokens...))
+				}
+			}()
 			continue
 		}
 
@@ -229,9 +235,10 @@ var _ grpc.ServerStream = (*serverStream)(nil)
 
 // serverStream implements grpc.ServerStream
 type serverStream struct {
-	ctx context.Context
-	pub Publisher
-	msg service.Message
+	ctx     context.Context
+	pub     Publisher
+	msg     service.Message
+	subject string
 }
 
 func (s *serverStream) SetHeader(md metadata.MD) error {
@@ -243,6 +250,7 @@ func (s *serverStream) SetHeader(md metadata.MD) error {
 	return nil
 }
 
+// SendHeader sets headers but not sends them. The headers will be attached together with the response message.
 func (s *serverStream) SendHeader(md metadata.MD) error {
 	return s.SetHeader(md)
 }
@@ -255,15 +263,25 @@ func (s *serverStream) Context() context.Context {
 	return s.ctx
 }
 
+// SendMsg sends a response back to the caller.
 func (s *serverStream) SendMsg(m interface{}) error {
 	msg, ok := m.(proto.Message)
 	if !ok {
 		return fmt.Errorf("invalid message type")
 	}
+	// TODO: Set response headers.
+	if s.msg == nil {
+		return s.pub.PublishTo(msg, s.subject)
+	}
+
 	return s.msg.Respond(msg)
 }
 
+// RecvMsg supports only single input message at the moment.
 func (s *serverStream) RecvMsg(m interface{}) error {
+	if s.msg == nil {
+		return nil
+	}
 	msg, ok := m.(proto.Message)
 	if !ok {
 		return fmt.Errorf("invalid message type")

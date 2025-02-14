@@ -3,8 +3,9 @@ package rpc_test
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"strings"
+	"sync"
+	"testing"
 
 	nats "github.com/nats-io/nats.go"
 	"github.com/synternet/data-layer-sdk/pkg/rpc"
@@ -18,13 +19,16 @@ var _ rpc.Publisher = (*Publisher)(nil)
 
 type Publisher struct {
 	ctx     context.Context
+	t       *testing.T
+	mu      sync.Mutex
 	streams map[string]chan service.Message
 	prefix  string
 }
 
-func NewPublisher(ctx context.Context, prefix string) *Publisher {
+func NewPublisher(ctx context.Context, t *testing.T, prefix string) *Publisher {
 	return &Publisher{
 		ctx:     ctx,
+		t:       t,
 		streams: make(map[string]chan service.Message),
 		prefix:  prefix,
 	}
@@ -34,11 +38,9 @@ func subject(subj ...string) string {
 	return strings.Join(subj, ".")
 }
 
-func replySubject(subj ...string) string {
-	return "REPLY." + strings.Join(subj, ".")
-}
-
 func (p *Publisher) stream(subj ...string) chan service.Message {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	subject := subject(subj...)
 	if ch, ok := p.streams[subject]; ok {
 		return ch
@@ -51,18 +53,19 @@ func (p *Publisher) stream(subj ...string) chan service.Message {
 // RequestFrom implements rpc.Publisher.
 func (p *Publisher) RequestFrom(ctx context.Context, msg proto.Message, resp proto.Message, tokens ...string) (service.Message, error) {
 	ch := p.stream(tokens...)
-	replyCh := p.stream(replySubject(tokens...))
+	replyTo := p.RpcInbox(tokens...)
+	replyCh := p.stream(replyTo)
 
 	msgData, err := protojson.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}
 
-	slog.Info("requestFrom: send", "replyTo", replySubject(tokens...), "sendTo", subject(tokens...))
+	p.t.Log("requestFrom: send", "replyTo=", replyTo, "sendTo=", subject(tokens...), "ch=", ch, "replyCh=", replyCh)
 	select {
-	case ch <- NewMsg(msgData, nil, replySubject(tokens...), subject(tokens...)):
 	case <-p.ctx.Done():
 		return nil, p.ctx.Err()
+	case ch <- NewMsg(p.t, msgData, replyCh, replyTo, subject(tokens...)):
 	}
 
 	select {
@@ -71,20 +74,28 @@ func (p *Publisher) RequestFrom(ctx context.Context, msg proto.Message, resp pro
 	case <-p.ctx.Done():
 		return nil, p.ctx.Err()
 	case data := <-replyCh:
+		p.t.Log("requestFrom: received", "replyTo=", replyTo, "sendTo=", subject(tokens...))
 		_, err := p.Unmarshal(data, resp)
 		return data, err
 	}
 }
 
+func (p *Publisher) RpcInbox(suffixes ...string) string {
+	return nats.NewInbox()
+}
+
 // Serve implements rpc.Publisher.
 func (p *Publisher) Serve(handler service.ServiceHandler, suffixes ...string) (*nats.Subscription, error) {
-	ch := p.stream(suffixes...)
-	slog.Info("serve", "listenTo", subject(suffixes...))
+	subject := p.Subject(suffixes...)
+	ch := p.stream(subject)
+	p.t.Log("serve", "listenTo=", subject, "ch=", ch)
 	go func() {
 		for {
 			select {
+			case <-p.ctx.Done():
+				return
 			case data := <-ch:
-				slog.Info("serve: received", "listenTo", subject(suffixes...), "subj", data.Subject(), "replyTo", data.Reply())
+				p.t.Log("serve: received", "listenTo=", subject, "subj=", data.Subject(), "replyTo=", data.Reply())
 				reply, err := handler(data)
 				if err != nil {
 					reply = &rpctypes.Error{
@@ -98,13 +109,11 @@ func (p *Publisher) Serve(handler service.ServiceHandler, suffixes ...string) (*
 				}
 
 				select {
-				case replyCh <- NewMsg(msgData, nil, "", data.Reply()):
 				case <-p.ctx.Done():
 					return
+				case replyCh <- NewMsg(p.t, msgData, nil, "", data.Reply()):
+					p.t.Log("serve: publish", "subj=", data.Reply())
 				}
-
-			case <-p.ctx.Done():
-				return
 			}
 		}
 	}()
@@ -114,15 +123,15 @@ func (p *Publisher) Serve(handler service.ServiceHandler, suffixes ...string) (*
 // SubscribeTo implements rpc.Publisher.
 func (p *Publisher) SubscribeTo(handler service.MessageHandler, tokens ...string) (*nats.Subscription, error) {
 	ch := p.stream(tokens...)
-	slog.Info("subscribeTo", "listenTo", subject(tokens...))
+	p.t.Log("subscribeTo", "listenTo=", subject(tokens...), "ch=", ch)
 	go func() {
 		for {
 			select {
-			case data := <-ch:
-				slog.Info("subscribeTo: received", "listenTo", subject(tokens...), "subj", data.Subject(), "replyTo", data.Reply())
-				handler(data)
 			case <-p.ctx.Done():
 				return
+			case data := <-ch:
+				p.t.Log("subscribeTo: received", "listenTo=", subject(tokens...), "subj=", data.Subject(), "replyTo=", data.Reply())
+				handler(data)
 			}
 		}
 	}()
@@ -137,11 +146,30 @@ func (p *Publisher) PublishTo(msg proto.Message, tokens ...string) error {
 		panic(err)
 	}
 
-	slog.Info("publishTo: send", "replyTo", replySubject(tokens...), "sendTo", subject(tokens...))
+	p.t.Log("publishTo: send", "sendTo=", subject(tokens...), "ch=", ch)
 	select {
-	case ch <- NewMsg(msgData, nil, replySubject(tokens...), subject(tokens...)):
 	case <-p.ctx.Done():
 		return p.ctx.Err()
+	case ch <- NewMsg(p.t, msgData, nil, "", subject(tokens...)):
+	}
+
+	return nil
+}
+
+func (p *Publisher) PublishToRpc(msg proto.Message, replyTo string, tokens ...string) error {
+	ch := p.stream(tokens...)
+	replyCh := p.stream(replyTo)
+
+	msgData, err := protojson.Marshal(msg)
+	if err != nil {
+		panic(err)
+	}
+
+	p.t.Log("publishToRpc: send", "replyTo=", replyTo, "sendTo=", subject(tokens...), "ch=", ch, "replyCh=", replyCh)
+	select {
+	case <-p.ctx.Done():
+		return p.ctx.Err()
+	case ch <- NewMsg(p.t, msgData, replyCh, replyTo, subject(tokens...)):
 	}
 
 	return nil

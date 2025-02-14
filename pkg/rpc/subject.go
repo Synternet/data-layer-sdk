@@ -18,6 +18,8 @@ type Publisher interface {
 	RequestFrom(ctx context.Context, msg proto.Message, resp proto.Message, tokens ...string) (service.Message, error)
 	SubscribeTo(handler service.MessageHandler, tokens ...string) (*nats.Subscription, error)
 	PublishTo(msg proto.Message, tokens ...string) error
+	PublishToRpc(msg proto.Message, replyTo string, tokens ...string) error
+	RpcInbox(suffixes ...string) string
 	Unmarshal(nmsg service.Message, msg protoreflect.ProtoMessage) (nats.Header, error)
 	Subject(suffixes ...string) string
 }
@@ -127,7 +129,7 @@ func getCustomMethodSuffix(methodDescriptor protoreflect.Descriptor) string {
 	return ""
 }
 
-func skipSubscription(methodDescriptor protoreflect.Descriptor) bool {
+func disableSubscription(methodDescriptor protoreflect.Descriptor) bool {
 	if methodDescriptor == nil {
 		return false
 	}
@@ -135,7 +137,7 @@ func skipSubscription(methodDescriptor protoreflect.Descriptor) bool {
 	if opts == nil {
 		return false
 	}
-	ext := proto.GetExtension(opts, rpc.E_SkipInputs)
+	ext := proto.GetExtension(opts, rpc.E_DisableInputs)
 	if suffix, ok := ext.(bool); ok {
 		return suffix
 	}

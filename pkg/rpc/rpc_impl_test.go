@@ -3,8 +3,8 @@ package rpc_test
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
+	"testing"
 
 	"github.com/synternet/data-layer-sdk/pkg/rpc"
 	rpctypes "github.com/synternet/data-layer-sdk/types/rpc"
@@ -14,15 +14,16 @@ import (
 var _ rpctypes.TestServiceServer = (*Test)(nil)
 
 type Test struct {
+	t *testing.T
 }
 
 // Test implements rpc.TestServiceServer.
 func (t *Test) Test(ctx context.Context, r *rpctypes.TestRequest) (*rpctypes.TestResponse, error) {
 	subject, _ := rpc.GetSubject(ctx)
 	headers, _ := rpc.GetHeaders(ctx)
-	slog.Info("Test", "r", r, "subject", subject, "header", headers)
+	t.t.Log("Test", "r=", r, "subject=", subject, "header=", headers)
 	if r.A < 0 {
-		return nil, fmt.Errorf("negative value: %v", r)
+		return nil, fmt.Errorf("negative value: a:%v b:%v", r.A, r.B)
 	}
 
 	hdr := make(map[string]string)
@@ -39,8 +40,8 @@ func (t *Test) Test(ctx context.Context, r *rpctypes.TestRequest) (*rpctypes.Tes
 
 // TestStream implements rpc.TestServiceServer.
 func (t *Test) TestStream(r *rpctypes.TestRequest, srv rpctypes.TestService_TestStreamServer) error {
-	var i float32 = 1
-	slog.Info("TestStream", "r", r)
+	var i float32
+	t.t.Log("TestStream", "r=", r)
 	for {
 		if err := srv.Send(&rpctypes.TestResponse{
 			Ab: (r.A + r.B) * i,
@@ -53,12 +54,13 @@ func (t *Test) TestStream(r *rpctypes.TestRequest, srv rpctypes.TestService_Test
 
 // TestStreamOnly implements rpc.TestServiceServer.
 func (t *Test) TestStreamOnly(_ *emptypb.Empty, srv rpctypes.TestService_TestStreamOnlyServer) error {
-	var i float32 = 1
-	slog.Info("TestStreamOnly")
+	var i float32
+	t.t.Log("TestStreamOnly")
 	for {
 		if err := srv.Send(&rpctypes.TestResponse{
 			Ab: i,
 		}); err != nil {
+			t.t.Log("TestStreamOnly", "err=", err)
 			return err
 		}
 		i += 1
@@ -67,15 +69,18 @@ func (t *Test) TestStreamOnly(_ *emptypb.Empty, srv rpctypes.TestService_TestStr
 
 // TestStreamBidirectional implements rpc.TestServiceServer.
 func (t *Test) TestStreamBidirectional(srv rpctypes.TestService_TestStreamBidirectionalServer) error {
+	t.t.Log("TestStreamBidirectional")
 	for {
 		var msg rpctypes.TestRequest
 		if err := srv.RecvMsg(&msg); err != nil {
+			t.t.Log("TestStreamBidirectional recv", "err=", err)
 			return err
 		}
 
 		if err := srv.Send(&rpctypes.TestResponse{
 			Ab: msg.A + msg.B,
 		}); err != nil {
+			t.t.Log("TestStreamBidirectional send", "err=", err)
 			return err
 		}
 	}

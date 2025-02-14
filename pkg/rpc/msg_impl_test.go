@@ -2,6 +2,8 @@ package rpc_test
 
 import (
 	"bytes"
+	"reflect"
+	"testing"
 	"time"
 
 	nats "github.com/nats-io/nats.go"
@@ -13,28 +15,32 @@ import (
 var _ service.Message = (*Message)(nil)
 
 type Message struct {
-	data    []byte
-	ch      chan service.Message
-	chName  string
-	subject string
+	t            *testing.T
+	data         []byte
+	ch           chan service.Message
+	replySubject string
+	subject      string
 }
 
-func NewMsg(data []byte, ch chan service.Message, chName, subject string) *Message {
+func NewMsg(t *testing.T, data []byte, ch chan service.Message, replySubject, subject string) *Message {
 	return &Message{
-		data:    data,
-		ch:      ch,
-		chName:  chName,
-		subject: subject,
+		t:            t,
+		data:         data,
+		ch:           ch,
+		replySubject: replySubject,
+		subject:      subject,
 	}
 }
 
 // Ack implements service.Message.
 func (m *Message) Ack(opts ...nats.AckOpt) error {
+	m.t.Log("msg Ack")
 	return nil
 }
 
 // AckSync implements service.Message.
 func (m *Message) AckSync(opts ...nats.AckOpt) error {
+	m.t.Log("msg AckSync")
 	return nil
 }
 
@@ -72,6 +78,7 @@ func (m *Message) Metadata() (*nats.MsgMetadata, error) {
 
 // Nak implements service.Message.
 func (m *Message) Nak(opts ...nats.AckOpt) error {
+	m.t.Log("msg Nak")
 	return nil
 }
 
@@ -87,7 +94,7 @@ func (m *Message) QueueName() string {
 
 // Reply implements service.Message.
 func (m *Message) Reply() string {
-	return m.chName
+	return m.replySubject
 }
 
 // Respond implements service.Message.
@@ -97,7 +104,8 @@ func (m *Message) Respond(msg proto.Message) error {
 		return err
 	}
 
-	m.ch <- NewMsg(msgData, nil, "", m.chName)
+	m.t.Logf("message Respond: reply=%s subj=%s msg=%s ch=%v", m.replySubject, m.subject, reflect.TypeOf(msg).Name(), m.ch)
+	m.ch <- NewMsg(m.t, msgData, nil, "", m.replySubject)
 	return nil
 }
 

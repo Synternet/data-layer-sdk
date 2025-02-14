@@ -16,5 +16,5 @@ extend google.protobuf.MethodOptions {
 
 extend google.protobuf.MethodOptions {
   // Optional flag to skip subscribing to the input stream.
-  bool skip_inputs = 50003;
+  bool disable_inputs = 50003;
 }

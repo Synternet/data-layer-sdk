@@ -22,6 +22,7 @@ service TestService {
   // TestStream Testing only streaming
   rpc TestStreamOnly(google.protobuf.Empty) returns (stream TestResponse) {
     option (subject_suffix) = "override.test.stream.data";
+    option (disable_inputs) = true;
   }
 
   // TestStreamBidirectional Testing streaming both ways

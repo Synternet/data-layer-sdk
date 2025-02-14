@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/nats-io/nats.go"
 	service "github.com/synternet/data-layer-sdk/pkg/service"
@@ -60,7 +61,7 @@ func (c *ClientConn) Invoke(ctx context.Context, method string, args interface{}
 		return fmt.Errorf("invalid subject: %s@%s", methodDesc.FullName(), svcDesc.FullName())
 	}
 	slog.Debug("ClientConn.Invoke", "service", svcDesc.FullName(), "method", methodDesc.FullName(), "subject", strings.Join(tokens, "."))
-	if skipSubscription(methodDesc) {
+	if disableSubscription(methodDesc) {
 		return fmt.Errorf("calling disabled: %s@%s", methodDesc.FullName(), svcDesc.FullName())
 	}
 	_, err = c.sub.RequestFrom(ctx, args.(proto.Message), reply.(proto.Message), tokens...)
@@ -77,9 +78,9 @@ func (c *ClientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 		return nil, fmt.Errorf("invalid subject: %s@%s", methodDesc.FullName(), svcDesc.FullName())
 	}
 	slog.Debug("ClientConn.NewStream", "service", svcDesc.FullName(), "method", methodDesc.FullName(), "subject", strings.Join(tokens, "."))
-	if skipSubscription(methodDesc) {
-		return nil, fmt.Errorf("calling disabled: %s@%s", methodDesc.FullName(), svcDesc.FullName())
-	}
+	// if disableSubscription(methodDesc) {
+	// 	return nil, fmt.Errorf("calling disabled: %s@%s", methodDesc.FullName(), svcDesc.FullName())
+	// }
 
 	stream, err := newClientStream(ctx, c.sub, tokens)
 	if err != nil {
@@ -92,27 +93,28 @@ func (c *ClientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 // clientStream implements grpc.ClientStream
 type clientStream struct {
 	ctx          context.Context
+	cancel       context.CancelCauseFunc
 	pub          Publisher
 	tokens       []string
 	replySubject string
 
-	mu        sync.Mutex
-	sub       *nats.Subscription
-	recvChan  chan service.Message
-	errChan   chan error
-	closeChan chan struct{}
-	closed    bool
+	mu         sync.Mutex
+	sub        *nats.Subscription
+	recvChan   chan service.Message
+	closedSend atomic.Bool
+	closedRecv atomic.Bool
+	once       sync.Once
 }
 
 func newClientStream(ctx context.Context, pub Publisher, tokens []string) (*clientStream, error) {
+	ctx, cancel := context.WithCancelCause(ctx)
 	stream := &clientStream{
 		ctx:          ctx,
+		cancel:       cancel,
 		pub:          pub,
 		tokens:       tokens,
-		replySubject: nats.NewInbox(),
+		replySubject: pub.RpcInbox(),
 		recvChan:     make(chan service.Message, 1000),
-		errChan:      make(chan error, 1),
-		closeChan:    make(chan struct{}),
 	}
 
 	return stream, nil
@@ -127,13 +129,6 @@ func (s *clientStream) Trailer() metadata.MD {
 }
 
 func (s *clientStream) CloseSend() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if !s.closed {
-		close(s.closeChan)
-		s.closed = true
-	}
 	return nil
 }
 
@@ -141,67 +136,74 @@ func (s *clientStream) Context() context.Context {
 	return s.ctx
 }
 
-func (s *clientStream) subscribe() error {
+func (s *clientStream) subscribe(tokens ...string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.sub != nil {
+		return nil
+	}
+
 	handler := func(msg service.Message) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		if s.closed {
-			return
-		}
-
 		select {
-		case s.recvChan <- msg:
 		case <-s.ctx.Done():
 			return
+		case s.recvChan <- msg:
 		}
 	}
-	sub, err := s.pub.SubscribeTo(handler, s.replySubject)
+	sub, err := s.pub.SubscribeTo(handler, tokens...)
 	s.sub = sub
 	return err
 }
 
 func (s *clientStream) SendMsg(m interface{}) error {
+	if s.closedSend.Load() {
+		return fmt.Errorf("send closed")
+	}
+
 	if _, ok := m.(*emptypb.Empty); ok {
-		return s.subscribe()
+		return s.subscribe(s.tokens...)
 	}
 
-	err := s.subscribe()
+	err := s.subscribe(s.replySubject)
 	if err != nil {
-		return err
+		return fmt.Errorf("subscribe: %w", err)
 	}
 
-	return s.pub.PublishTo(m.(proto.Message), s.tokens...)
+	return s.pub.PublishToRpc(m.(proto.Message), s.replySubject, s.tokens...)
 }
 
 func (s *clientStream) RecvMsg(m interface{}) error {
-	if _, ok := m.(*emptypb.Empty); ok {
-		return nil
+	if s.closedRecv.Load() {
+		return fmt.Errorf("recv closed")
 	}
 
 	select {
-	case err := <-s.errChan:
-		return err
-	case msg := <-s.recvChan:
-		_, err := s.pub.Unmarshal(msg, m.(proto.Message))
-		return err
 	case <-s.ctx.Done():
 		return s.ctx.Err()
-	case <-s.closeChan:
-		return fmt.Errorf("stream closed")
+	case msg, ok := <-s.recvChan:
+		if !ok {
+			return fmt.Errorf("closed")
+		}
+		_, err := s.pub.Unmarshal(msg, m.(proto.Message))
+		return err
 	}
 }
 
 func (s *clientStream) Close() error {
 	s.mu.Lock()
-
 	defer s.mu.Unlock()
 
-	if !s.closed {
-		close(s.closeChan)
-		s.closed = true
+	s.once.Do(func() {
+		s.closedSend.Store(true)
+		s.closedRecv.Store(true)
+		s.cancel(nil)
 		if s.sub != nil {
 			s.sub.Unsubscribe()
 		}
-	}
+		close(s.recvChan)
+	})
+
 	return nil
 }
