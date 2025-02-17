@@ -1,0 +1,13 @@
+version: v1
+deps:
+  - buf.build/protocolbuffers/wellknowntypes
+  - buf.build/synternet/proto
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+  except:
+    - COMMENT_FIELD
+    - PACKAGE_VERSION_SUFFIX
