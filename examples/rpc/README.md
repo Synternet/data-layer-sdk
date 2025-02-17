@@ -99,6 +99,29 @@ The `Registrations` method is a **free-running stream**—it does not accept inp
 
 ## Using the Go-Generated Code
 
+You can create testnet publisher and subscriber in order to test this example, or you can use the local NATS server.
+
+If you want to run it locally, then install NATS tools, NATS server, and execute `setup-nats.sh` in the `examples/rpc` folder. After the NATS server is configured,
+you can run it using this command:
+
+```
+nats-server -c .nats/server.conf -DV
+```
+
+After this you can run the publisher:
+
+```
+NATS_URL=127.0.0.1 PUBLISHER_CREDS=.nats/creds/test/publisher/publisher.creds go run ./publisher
+```
+
+And then the subscriber:
+
+```
+NATS_URL=127.0.0.1 SUBSCRIBER_CREDS=.nats/creds/test/subscriber/subscriber.creds go run ./subscriber
+```
+
+You should be able to see the result of interaction between the publisher and the subscriber.
+
 ### Publisher-Side Implementation
 
 To use the service, first **generate** the protobuf messages, server, and client code. Then, integrate them into the **Data Layer**.

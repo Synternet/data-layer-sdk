@@ -25,7 +25,7 @@ func (u *UserService) Add(_ context.Context, r *v1.AddRequest) (*v1.AddResponse,
 		Surname: r.Surname,
 	}
 	u.users = append(u.users, user)
-	u.pub.Publish(&v1.RegistrationsResponse{User: user}, "registrations")
+	u.pub.Publish(&v1.RegistrationsResponse{User: user}, "users.registrations")
 	u.pub.Logger.Info("User Add", "user", user)
 	return &v1.AddResponse{
 		Result: &v1.AddResponse_User{User: user},

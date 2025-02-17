@@ -62,7 +62,7 @@ func main() {
 			panic(err)
 		}
 		slog.Info("New user just registered", "user", &user)
-	}, *source, "registrations")
+	}, *source, "users.registrations")
 
 	pubCtx := subscriber.Start()
 	defer subscriber.Close()
