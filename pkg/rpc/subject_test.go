@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-func Test_camelToDotCase(t *testing.T) {
+func Test_pascalToDotCase(t *testing.T) {
 	tests := []struct {
 		name string
 		args string
@@ -36,19 +36,19 @@ func Test_camelToDotCase(t *testing.T) {
 			want: []string{"simple", "name"},
 		},
 		{
-			name: "CamelCase",
+			name: "PascalCase",
 			args: "SimpleName",
 			want: []string{"simple", "name"},
 		},
 		{
-			name: "PKGCamelCase",
+			name: "PKGPascalCase",
 			args: "PREFIXSimpleName",
 			want: []string{"prefix", "simple", "name"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := splitCamelCase(tt.args)
+			got := splitPascalCase(tt.args)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -74,6 +74,11 @@ func Test_deriveServiceTokens(t *testing.T) {
 			name:        "semi local",
 			serviceName: protoreflect.FullName("pkg.MyService"),
 			want:        []string{"service", "pkg", "my"},
+		},
+		{
+			name:        "empty",
+			serviceName: protoreflect.FullName(""),
+			want:        []string{},
 		},
 	}
 	for _, tt := range tests {

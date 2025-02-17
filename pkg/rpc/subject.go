@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -24,12 +25,12 @@ type Publisher interface {
 	Subject(suffixes ...string) string
 }
 
-// normalizeCamelCase normalizes a CamelCase string by converting a leading run
-// of uppercase letters to proper CamelCase. For example:
+// normalizePascalCase normalizes a Pascal Case string by converting a leading run
+// of uppercase letters to proper Pascal Case. For example:
 //
 //	"PKGFarAway" -> "PkgFarAway"
 //	"PKG" -> "pkg" (if the entire string is uppercase)
-func normalizeCamelCase(s string) string {
+func normalizePascalCase(s string) string {
 	if s == "" {
 		return s
 	}
@@ -58,9 +59,9 @@ func normalizeCamelCase(s string) string {
 	return s
 }
 
-// splitCamelCase splits a CamelCase string into a slice of lower case strings.
-func splitCamelCase(s string) []string {
-	s = normalizeCamelCase(s)
+// splitPascalCase splits a Pascal Case string into a slice of lower case strings.
+func splitPascalCase(s string) []string {
+	s = normalizePascalCase(s)
 
 	var words []string
 	start := 0
@@ -87,10 +88,13 @@ func splitCamelCase(s string) []string {
 // deriveServiceTokens derives tokens from the service's full name.
 // For example, "pkg.MyService" becomes tokens like ["pkg", "my", "service"].
 func deriveServiceTokens(serviceName protoreflect.FullName) []string {
+	if serviceName == "" {
+		return []string{}
+	}
 	tokens := []string{"service"}
-	name := splitCamelCase(strings.TrimSuffix(string(serviceName.Name()), "Service"))
+	name := splitPascalCase(strings.TrimSuffix(string(serviceName.Name()), "Service"))
 	pkg := serviceName.Parent()
-	pkgTokens := splitCamelCase(string(pkg.Name()))
+	pkgTokens := splitPascalCase(string(pkg.Name()))
 	if len(pkgTokens) != 0 {
 		tokens = append(tokens, pkgTokens...)
 	}
@@ -154,9 +158,7 @@ func deriveSubject(prefix string, serviceDescriptor, methodDescriptor protorefle
 	var tokens []string
 
 	// Use the explicit prefix if provided.
-	if prefix != "" {
-		tokens = append(tokens, prefix)
-	}
+	tokens = append(tokens, prefix)
 
 	// Service prefix.
 	if sp := getCustomServicePrefix(serviceDescriptor); sp != "" {
@@ -169,8 +171,8 @@ func deriveSubject(prefix string, serviceDescriptor, methodDescriptor protorefle
 	if ms := getCustomMethodSuffix(methodDescriptor); ms != "" {
 		tokens = append(tokens, ms)
 	} else {
-		tokens = append(tokens, splitCamelCase(string(methodDescriptor.Name()))...)
+		tokens = append(tokens, splitPascalCase(string(methodDescriptor.Name()))...)
 	}
 
-	return tokens
+	return slices.DeleteFunc(tokens, func(s string) bool { return s == "" })
 }
