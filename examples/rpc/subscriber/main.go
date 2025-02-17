@@ -19,9 +19,9 @@ import (
 func main() {
 	urls := flag.String("urls", os.Getenv("NATS_URL"), "NATS urls")
 	source := flag.String("source", "synternet.rpc-example", "Source Subject to stream from.")
-	creds := flag.String("nats-creds", os.Getenv("NATS_CREDS"), "NATS credentials file")
-	nkey := flag.String("nats-nkey", os.Getenv("NATS_NKEY"), "NATS NKey string")
-	jwt := flag.String("nats-jwt", os.Getenv("NATS_JWT"), "NATS JWT string")
+	creds := flag.String("nats-creds", os.Getenv("SUBSCRIBER_CREDS"), "NATS credentials file")
+	nkey := flag.String("nats-nkey", os.Getenv("SUBSCRIBER_NKEY"), "NATS NKey string")
+	jwt := flag.String("nats-jwt", os.Getenv("SUBSCRIBER_JWT"), "NATS JWT string")
 	verbose := flag.Bool("verbose", false, "Verbose logs")
 
 	flag.Parse()
