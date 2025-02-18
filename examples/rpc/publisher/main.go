@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/synternet/data-layer-sdk/pkg/codec"
 	"github.com/synternet/data-layer-sdk/pkg/options"
 	"github.com/synternet/data-layer-sdk/pkg/service"
 )
@@ -36,6 +37,7 @@ func main() {
 		service.WithNats(conn),
 		service.WithNKeySeed(*nkey),
 		service.WithUserCreds(*creds),
+		service.WithCodec(codec.NewProtoJsonCodec()),
 		service.WithVerbose(*verbose),
 	}
 

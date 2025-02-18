@@ -9,6 +9,7 @@ import (
 	"os/signal"
 
 	v1 "github.com/synternet/data-layer-sdk/examples/rpc/types/example/v1"
+	"github.com/synternet/data-layer-sdk/pkg/codec"
 	_ "github.com/synternet/data-layer-sdk/pkg/dotenv"
 	"github.com/synternet/data-layer-sdk/pkg/rpc"
 
@@ -39,6 +40,7 @@ func main() {
 		service.WithName("client"),
 		service.WithNats(conn),
 		service.WithVerbose(*verbose),
+		service.WithCodec(codec.NewProtoJsonCodec()),
 	}
 
 	opts = append(

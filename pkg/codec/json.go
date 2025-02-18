@@ -2,7 +2,8 @@
 package codec
 
 import (
-	"google.golang.org/protobuf/encoding/protojson"
+	"encoding/json"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -14,9 +15,9 @@ func NewJsonCodec() *JsonCodec {
 }
 
 func (c *JsonCodec) Encode(buf []byte, msg proto.Message) ([]byte, error) {
-	return protojson.Marshal(msg)
+	return json.Marshal(msg)
 }
 
 func (c *JsonCodec) Decode(buf []byte, msg proto.Message) error {
-	return protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}.Unmarshal(buf, msg)
+	return json.Unmarshal(buf, msg)
 }

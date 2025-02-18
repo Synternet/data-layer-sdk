@@ -148,6 +148,8 @@ type BackendService struct {
 }
 ```
 
+Don't forget to set Protobuf Codec with `service.WithCodec(codec.NewProtoJsonCodec())` option!
+
 ---
 
 ### Client-Side Integration
@@ -166,7 +168,16 @@ func main() {
 
   // Configure the service connection
   var service service.Service
-  service.Configure(...)
+  opts := []options.Option{
+    service.WithContext(ctx),
+    service.WithName(name),
+    service.WithPrefix(prefix),
+    service.WithNats(conn),
+    service.WithNKeySeed(nkey),
+    service.WithUserCreds(path_to_user_creds),
+    service.WithCodec(codec.NewProtoJsonCodec()),
+  }
+  service.Configure(opts...)
 
   user := setupClient(ctx, &service)
 
