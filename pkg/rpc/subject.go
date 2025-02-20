@@ -149,12 +149,18 @@ func disableSubscription(methodDescriptor protoreflect.Descriptor) bool {
 }
 
 // deriveSubject generates the final subject tokens using the following logic:
+//
 //  1. If a non-empty prefix is provided as an argument, use it (split by dots).
 //  2. Otherwise, check if the service descriptor has a custom subject prefix (via extension).
 //     If set, use that; if not, derive tokens from the service's full name.
 //  3. For the method portion, check if the method descriptor has a custom subject suffix.
 //     If set, use that; otherwise, derive tokens from the method name.
-func deriveSubject(prefix string, serviceDescriptor, methodDescriptor protoreflect.Descriptor) []string {
+//
+// Custom subjects can be parametrized like so: `organization.name.service.param.{id}`. If you pass map[string]string{"id": `123456`}
+// the subject will be transformed into `organization.name.service.param.123456`.
+//
+// This is especially handy for parametrized services or streams where client is only authorized to access certain ids.
+func deriveSubject(prefix string, serviceDescriptor, methodDescriptor protoreflect.Descriptor, vars map[string]string) []string {
 	var tokens []string
 
 	// Use the explicit prefix if provided.
@@ -173,6 +179,34 @@ func deriveSubject(prefix string, serviceDescriptor, methodDescriptor protorefle
 	} else {
 		tokens = append(tokens, splitPascalCase(string(methodDescriptor.Name()))...)
 	}
+	tokens = splitAndParametrizeTokens(tokens, vars)
 
 	return slices.DeleteFunc(tokens, func(s string) bool { return s == "" })
+}
+
+func splitAndParametrizeTokens(tokens []string, vars map[string]string) []string {
+	result := make([]string, 0, len(tokens))
+
+	for _, token := range tokens {
+		result = append(result, strings.Split(token, ".")...)
+	}
+
+	for i, token := range result {
+		token = strings.TrimSpace(token)
+		if strings.HasPrefix(token, "{") || strings.HasSuffix(token, "}") {
+			st := strings.Trim(token, "{}")
+			if vars != nil {
+				if v, ok := vars[st]; ok {
+					token = strings.TrimSpace(v)
+				} else {
+					token = "*"
+				}
+			} else {
+				token = "*"
+			}
+		}
+		result[i] = token
+	}
+
+	return result
 }

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	TestService_Test_FullMethodName                    = "/synternet.rpc.TestService/Test"
+	TestService_TestVars_FullMethodName                = "/synternet.rpc.TestService/TestVars"
 	TestService_TestStream_FullMethodName              = "/synternet.rpc.TestService/TestStream"
 	TestService_TestStreamOnly_FullMethodName          = "/synternet.rpc.TestService/TestStreamOnly"
 	TestService_TestStreamBidirectional_FullMethodName = "/synternet.rpc.TestService/TestStreamBidirectional"
@@ -34,6 +35,8 @@ const (
 type TestServiceClient interface {
 	// Test Testing single request and reply
 	Test(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error)
+	// TestVars Testing single request and reply with variable suffix
+	TestVars(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error)
 	// TestStream Testing request and streaming reply
 	TestStream(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TestResponse], error)
 	// TestStream Testing only streaming
@@ -54,6 +57,16 @@ func (c *testServiceClient) Test(ctx context.Context, in *TestRequest, opts ...g
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TestResponse)
 	err := c.cc.Invoke(ctx, TestService_Test_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testServiceClient) TestVars(ctx context.Context, in *TestRequest, opts ...grpc.CallOption) (*TestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TestResponse)
+	err := c.cc.Invoke(ctx, TestService_TestVars_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +132,8 @@ type TestService_TestStreamBidirectionalClient = grpc.BidiStreamingClient[TestRe
 type TestServiceServer interface {
 	// Test Testing single request and reply
 	Test(context.Context, *TestRequest) (*TestResponse, error)
+	// TestVars Testing single request and reply with variable suffix
+	TestVars(context.Context, *TestRequest) (*TestResponse, error)
 	// TestStream Testing request and streaming reply
 	TestStream(*TestRequest, grpc.ServerStreamingServer[TestResponse]) error
 	// TestStream Testing only streaming
@@ -136,6 +151,9 @@ type UnimplementedTestServiceServer struct{}
 
 func (UnimplementedTestServiceServer) Test(context.Context, *TestRequest) (*TestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Test not implemented")
+}
+func (UnimplementedTestServiceServer) TestVars(context.Context, *TestRequest) (*TestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TestVars not implemented")
 }
 func (UnimplementedTestServiceServer) TestStream(*TestRequest, grpc.ServerStreamingServer[TestResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method TestStream not implemented")
@@ -184,6 +202,24 @@ func _TestService_Test_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TestService_TestVars_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestServiceServer).TestVars(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TestService_TestVars_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestServiceServer).TestVars(ctx, req.(*TestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TestService_TestStream_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(TestRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -223,6 +259,10 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Test",
 			Handler:    _TestService_Test_Handler,
+		},
+		{
+			MethodName: "TestVars",
+			Handler:    _TestService_TestVars_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

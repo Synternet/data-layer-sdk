@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -108,4 +109,44 @@ func Test_getCustomMethodSuffix(t *testing.T) {
 
 	got := getCustomMethodSuffix(methodDesc)
 	assert.Equal(t, got, "override.test.stream.data")
+}
+
+func Test_splitAndParametrizeTokens(t *testing.T) {
+	type args struct {
+		tokens []string
+		vars   map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "simple",
+			args: args{tokens: []string{"a", "b.c"}, vars: nil},
+			want: []string{"a", "b", "c"},
+		},
+		{
+			name: "no vars",
+			args: args{tokens: []string{"a", "b.{c}"}, vars: nil},
+			want: []string{"a", "b", "*"},
+		},
+		{
+			name: "vars",
+			args: args{tokens: []string{"a", "b.{c}"}, vars: map[string]string{"c": "123"}},
+			want: []string{"a", "b", "123"},
+		},
+		{
+			name: "split vars",
+			args: args{tokens: []string{"a", "b.{c.d}"}, vars: map[string]string{"c": "123"}},
+			want: []string{"a", "b", "123", "*"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := splitAndParametrizeTokens(tt.args.tokens, tt.args.vars); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("splitAndParametrizeTokens() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

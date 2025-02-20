@@ -33,7 +33,7 @@ func New(o ...options.Option) (*Publisher, error) {
 func (p *Publisher) Start() context.Context {
 	v1.RegisterUserServiceServer(p.ServiceRegistrar, &p.userService)
 	ctx := p.Service.Start()
-	if err := p.ServiceRegistrar.Start(ctx); err != nil {
+	if err := p.ServiceRegistrar.Start(ctx, nil); err != nil {
 		p.Fail(err)
 	}
 	return ctx

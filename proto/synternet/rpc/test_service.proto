@@ -14,6 +14,11 @@ service TestService {
     option (subject_suffix) = "override.test.method";
   }
 
+  // TestVars Testing single request and reply with variable suffix
+  rpc TestVars(TestRequest) returns (TestResponse) {
+    option (subject_suffix) = "override.test.method.{variable}";
+  }
+  
   // TestStream Testing request and streaming reply
   rpc TestStream(TestRequest) returns (stream TestResponse) {
     option (subject_suffix) = "override.test.stream.method";

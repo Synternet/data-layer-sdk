@@ -23,13 +23,25 @@ type ClientConn struct {
 	ctx    context.Context
 	sub    Publisher
 	prefix string
+	vars   map[string]string
 }
 
-func NewClientConn(ctx context.Context, sub Publisher, remotePrefix string) *ClientConn {
+// NewClientConn returns a client connector that functions as a layer between Protobuf Auto-generated gRPC client code
+// and Data Layer allowing making rpc calls to a remote publisher.
+//
+// It automatically derives the correct subjects based on the Protobuf schema, however, you may need to specify the
+// remote prefix that the publisher is configured with. Also, you may need to pass vars. The subjects derived if contain
+// any tokens such as `{id}`, will be substituted by the string stored under key "id". Otherwise such
+// subject token will be replaced with `*`.
+//
+// Naturally such subjects are invalid for a rpc call, so you must always supply variables for a client. Consuming pure streams
+// will work just fine.
+func NewClientConn(ctx context.Context, sub Publisher, remotePrefix string, vars map[string]string) *ClientConn {
 	return &ClientConn{
 		sub:    sub,
 		ctx:    ctx,
 		prefix: remotePrefix,
+		vars:   vars,
 	}
 }
 
@@ -56,7 +68,8 @@ func (c *ClientConn) Invoke(ctx context.Context, method string, args interface{}
 	if err != nil {
 		return fmt.Errorf("parse method: %w", err)
 	}
-	tokens := deriveSubject(c.prefix, svcDesc, methodDesc)
+	tokens := deriveSubject(c.prefix, svcDesc, methodDesc, c.vars)
+	slog.Warn("tokens", "svc", svcDesc.FullName(), "method", methodDesc.FullName(), "vars", c.vars, "tokens", tokens)
 	if tokens == nil {
 		return fmt.Errorf("invalid subject: %s@%s", methodDesc.FullName(), svcDesc.FullName())
 	}
@@ -73,7 +86,7 @@ func (c *ClientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	if err != nil {
 		return nil, fmt.Errorf("parse method: %v", err)
 	}
-	tokens := deriveSubject(c.prefix, svcDesc, methodDesc)
+	tokens := deriveSubject(c.prefix, svcDesc, methodDesc, c.vars)
 	if tokens == nil {
 		return nil, fmt.Errorf("invalid subject: %s@%s", methodDesc.FullName(), svcDesc.FullName())
 	}

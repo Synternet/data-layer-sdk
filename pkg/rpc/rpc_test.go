@@ -14,14 +14,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func makeServer(t *testing.T, ctx context.Context) rpc.Publisher {
+func makeServer(t *testing.T, ctx context.Context, vars map[string]string) rpc.Publisher {
 	ctx, _ = context.WithTimeout(ctx, time.Second*30)
 	grp, ctx := errgroup.WithContext(ctx)
 	pub := NewPublisher(ctx, t, "test_prefix")
 	srv := rpc.NewServiceRegistrar(grp, pub)
 
 	rpctypes.RegisterTestServiceServer(srv, &Test{t: t})
-	go srv.Start(ctx)
+	go srv.Start(ctx, vars)
 	time.Sleep(time.Millisecond * 10) // Allow go routines to run before we start the client
 
 	return pub
@@ -32,7 +32,7 @@ func TestPubSub(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	srv := makeServer(t, ctx)
+	srv := makeServer(t, ctx, nil)
 
 	received := make(chan struct{})
 	srv.SubscribeTo(func(msg service.Message) {
@@ -54,7 +54,7 @@ func TestPubRpcSub(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	srv := makeServer(t, ctx)
+	srv := makeServer(t, ctx, nil)
 
 	received := make(chan struct{})
 	srv.SubscribeTo(func(msg service.Message) {
@@ -76,8 +76,8 @@ func TestRequestReply(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	sub := makeServer(t, ctx)
-	clt := rpc.NewClientConn(ctx, sub, "test_prefix")
+	sub := makeServer(t, ctx, nil)
+	clt := rpc.NewClientConn(ctx, sub, "test_prefix", nil)
 	client := rpctypes.NewTestServiceClient(clt)
 
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Millisecond*50)
@@ -94,12 +94,34 @@ func TestRequestReply(t *testing.T) {
 	time.Sleep(time.Millisecond * 10)
 }
 
+func TestRequestReplyWithVars(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	sub := makeServer(t, ctx, map[string]string{"synternet.rpc.TestService/variable": "123456"})
+	clt := rpc.NewClientConn(ctx, sub, "test_prefix", map[string]string{"variable": "123456"})
+	client := rpctypes.NewTestServiceClient(clt)
+
+	ctx1, cancel1 := context.WithTimeout(ctx, time.Millisecond*50)
+	defer cancel1()
+	res, err := client.TestVars(ctx1, &rpctypes.TestRequest{A: 123, B: 321})
+	require.NoError(t, err)
+	require.NotNil(t, res)
+
+	assert.Equal(t, float32(123.0+321.0), res.Ab)
+	assert.Equal(t, "", res.Error)
+	assert.Equal(t, "test_prefix.override.test.override.test.method.123456", res.Subject)
+	assert.Equal(t, map[string]string{"identity": "some,identity"}, res.Header)
+
+	time.Sleep(time.Millisecond * 10)
+}
+
 func TestRequestReplyWithError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
 	defer cancel()
 
-	sub := makeServer(t, ctx)
-	clt := rpc.NewClientConn(ctx, sub, "test_prefix")
+	sub := makeServer(t, ctx, nil)
+	clt := rpc.NewClientConn(ctx, sub, "test_prefix", nil)
 	client := rpctypes.NewTestServiceClient(clt)
 
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Millisecond*50)
@@ -119,8 +141,8 @@ func TestRequestStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	sub := makeServer(t, ctx)
-	clt := rpc.NewClientConn(ctx, sub, "test_prefix")
+	sub := makeServer(t, ctx, nil)
+	clt := rpc.NewClientConn(ctx, sub, "test_prefix", nil)
 	client := rpctypes.NewTestServiceClient(clt)
 
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Millisecond*200)
@@ -146,8 +168,8 @@ func TestRequestStreamOnly(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	sub := makeServer(t, ctx)
-	clt := rpc.NewClientConn(ctx, sub, "test_prefix")
+	sub := makeServer(t, ctx, nil)
+	clt := rpc.NewClientConn(ctx, sub, "test_prefix", nil)
 	client := rpctypes.NewTestServiceClient(clt)
 
 	ctx1, cancel1 := context.WithTimeout(ctx, time.Millisecond*200)

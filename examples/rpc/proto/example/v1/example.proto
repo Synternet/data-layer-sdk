@@ -27,7 +27,7 @@ message AddRequest {
 }
 
 message AddResponse {
-  oneof Result {
+  oneof result {
     User user = 1;
     synternet.rpc.Error error = 2;
   }

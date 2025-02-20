@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/synternet/data-layer-sdk/pkg/rpc"
 	rpctypes "github.com/synternet/data-layer-sdk/x/synternet/rpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -25,6 +26,29 @@ func (t *Test) Test(ctx context.Context, r *rpctypes.TestRequest) (*rpctypes.Tes
 	if r.A < 0 {
 		return nil, fmt.Errorf("negative value: a:%v b:%v", r.A, r.B)
 	}
+
+	hdr := make(map[string]string)
+	for k, v := range headers {
+		hdr[k] = strings.Join(v, ",")
+	}
+
+	return &rpctypes.TestResponse{
+		Ab:      r.A + r.B,
+		Subject: subject.String(),
+		Header:  hdr,
+	}, nil
+}
+
+// TestVars implements rpc.TestServiceServer.
+func (t *Test) TestVars(ctx context.Context, r *rpctypes.TestRequest) (*rpctypes.TestResponse, error) {
+	subject, _ := rpc.GetSubject(ctx)
+	headers, _ := rpc.GetHeaders(ctx)
+	t.t.Log("Test", "r=", r, "subject=", subject, "header=", headers)
+	if r.A < 0 {
+		return nil, fmt.Errorf("negative value: a:%v b:%v", r.A, r.B)
+	}
+
+	assert.Equal(t.t, "123456", subject.Tokens()[len(subject.Tokens())-1])
 
 	hdr := make(map[string]string)
 	for k, v := range headers {

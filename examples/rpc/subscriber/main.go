@@ -55,7 +55,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("Failed creating the consumer: %w", err))
 	}
-	users := v1.NewUserServiceClient(rpc.NewClientConn(ctx, &subscriber, *source))
+	users := v1.NewUserServiceClient(rpc.NewClientConn(ctx, &subscriber, *source, nil))
 
 	subscriber.SubscribeTo(func(msg service.Message) {
 		var user v1.RegistrationsResponse
