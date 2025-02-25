@@ -1,6 +1,6 @@
 syntax = "proto3";
-package types.rpc;
-option go_package = "github.com/synternet/data-layer-sdk/types/rpc/types";
+package synternet.rpc;
+option go_package = "github.com/synternet/data-layer-sdk/x/synternet/rpc";
 
 import "google/protobuf/descriptor.proto";
 
@@ -12,4 +12,9 @@ extend google.protobuf.ServiceOptions {
 extend google.protobuf.MethodOptions {
   // Optional suffix to override default method name in a subject
   string subject_suffix = 50002;
+}
+
+extend google.protobuf.MethodOptions {
+  // Optional flag to skip subscribing to the input stream.
+  bool disable_inputs = 50003;
 }

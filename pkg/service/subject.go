@@ -8,6 +8,22 @@ import (
 // Subject represents a NATS subject which can include wildcards.
 type Subject string
 
+func NewSubject(prefix string, suffixes ...string) Subject {
+	tokens := make([]string, 0, len(suffixes))
+	prefix = strings.TrimSpace(prefix)
+	if prefix != "" {
+		tokens = append(tokens, prefix)
+	}
+	for _, suffix := range suffixes {
+		suffix = strings.TrimSpace(suffix)
+		if suffix == "" {
+			continue
+		}
+		tokens = append(tokens, suffix)
+	}
+	return Subject(strings.Join(tokens, "."))
+}
+
 // String converts the Subject back to its string representation.
 func (s Subject) String() string {
 	return string(s)

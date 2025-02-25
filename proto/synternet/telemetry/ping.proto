@@ -1,8 +1,8 @@
 syntax = "proto3";
-package types.telemetry;
-option go_package = "github.com/synternet/data-layer-sdk/types/telemetry/types";
+package synternet.telemetry;
+option go_package = "github.com/synternet/data-layer-sdk/x/synternet/telemetry";
 
-import "types/rpc/options.proto";
+import "synternet/rpc/options.proto";
 
 // PingService allows measuring latency by obtaining message flight time and recording the timestamps.
 // The resulting subject is {pub_prefix}.{pub_name}.telemetry.ping

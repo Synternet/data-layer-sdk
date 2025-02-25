@@ -38,10 +38,10 @@ type natsMessage struct {
 	codec        options.Codec
 	msgCounter   *atomic.Uint64
 	bytesCounter *atomic.Uint64
-	make         func([]byte, string) (*nats.Msg, error)
+	make         func([]byte, string, string) (*nats.Msg, error)
 }
 
-func wrapMessage(codec options.Codec, msgCounter, bytesCounter *atomic.Uint64, maker func([]byte, string) (*nats.Msg, error), msg *nats.Msg) *natsMessage {
+func wrapMessage(codec options.Codec, msgCounter, bytesCounter *atomic.Uint64, maker func([]byte, string, string) (*nats.Msg, error), msg *nats.Msg) *natsMessage {
 	return &natsMessage{Msg: msg, codec: codec, make: maker, msgCounter: msgCounter, bytesCounter: bytesCounter}
 }
 
@@ -59,7 +59,7 @@ func (m natsMessage) Respond(msg proto.Message) error {
 		return err
 	}
 
-	nmsg, err := m.make(payload, m.Msg.Reply)
+	nmsg, err := m.make(payload, "", m.Msg.Reply)
 	if err != nil {
 		return err
 	}

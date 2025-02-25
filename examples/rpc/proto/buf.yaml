@@ -1,7 +1,7 @@
 version: v1
-name: buf.build/synternet/proto
 deps:
   - buf.build/protocolbuffers/wellknowntypes
+  - buf.build/synternet/proto
 breaking:
   use:
     - FILE

@@ -55,6 +55,7 @@ type Service struct {
 	startTime         time.Time
 	prevTelemetry     time.Time
 	publishCh         chan *nats.Msg // This is out of bounds publish channel
+	publishRpcCh      chan *nats.Msg // This is out of bounds publish to RPC service channel
 	nonce             atomic.Uint64
 	msg_in_counter    atomic.Uint64
 	msg_out_counter   atomic.Uint64
@@ -78,6 +79,7 @@ func (b *Service) Configure(opts ...options.Option) error {
 		return fmt.Errorf("failed parsing options: %w", err)
 	}
 	b.publishCh = make(chan *nats.Msg, b.PublishQueueSize)
+	b.publishRpcCh = make(chan *nats.Msg, b.PublishQueueSize)
 
 	privKey, ok := b.PrivateKey.(ed25519.PrivateKey)
 	if !ok {
@@ -130,6 +132,14 @@ func (b *Service) run() error {
 				continue
 			}
 			b.PubNats.PublishMsg(msg)
+			b.msg_out_counter.Add(1)
+			b.bytes_out_counter.Add(uint64(len(msg.Data)))
+		case msg := <-b.publishRpcCh:
+			if b.ReqNats == nil {
+				b.Logger.Warn("Messages are being published to nil RPC NATS connection")
+				continue
+			}
+			b.ReqNats.PublishMsg(msg)
 			b.msg_out_counter.Add(1)
 			b.bytes_out_counter.Add(uint64(len(msg.Data)))
 		}
@@ -194,12 +204,14 @@ func (b *Service) collectStatus() map[string]string {
 		"messages",
 		status,
 		map[string]string{
-			"out_queue":     strconv.FormatInt(int64(len(b.publishCh)), 10),
-			"out_queue_cap": strconv.FormatInt(int64(cap(b.publishCh)), 10),
-			"in":            strconv.FormatUint(b.msg_in_counter.Swap(0), 10),
-			"out":           strconv.FormatUint(b.msg_out_counter.Swap(0), 10),
-			"bytes_in":      strconv.FormatUint(b.bytes_in_counter.Swap(0), 10),
-			"bytes_out":     strconv.FormatUint(b.bytes_out_counter.Swap(0), 10),
+			"out_queue":         strconv.FormatInt(int64(len(b.publishCh)), 10),
+			"out_queue_cap":     strconv.FormatInt(int64(cap(b.publishCh)), 10),
+			"rpc_out_queue":     strconv.FormatInt(int64(len(b.publishRpcCh)), 10),
+			"rpc_out_queue_cap": strconv.FormatInt(int64(cap(b.publishRpcCh)), 10),
+			"in":                strconv.FormatUint(b.msg_in_counter.Swap(0), 10),
+			"out":               strconv.FormatUint(b.msg_out_counter.Swap(0), 10),
+			"bytes_in":          strconv.FormatUint(b.bytes_in_counter.Swap(0), 10),
+			"bytes_out":         strconv.FormatUint(b.bytes_out_counter.Swap(0), 10),
 		},
 	)
 
@@ -218,7 +230,7 @@ func (b *Service) Fail(err error) {
 	b.Cancel(err)
 }
 
-func (b *Service) makeMsg(payload []byte, subject string) (*nats.Msg, error) {
+func (b *Service) makeMsg(payload []byte, replyTo, subject string) (*nats.Msg, error) {
 	signature, _, err := b.Sign(payload)
 	if err != nil {
 		return nil, err
@@ -226,6 +238,7 @@ func (b *Service) makeMsg(payload []byte, subject string) (*nats.Msg, error) {
 
 	result := &nats.Msg{
 		Subject: subject,
+		Reply:   replyTo,
 		Data:    payload,
 		Header: map[string][]string{
 			"identity":  {b.Identity},

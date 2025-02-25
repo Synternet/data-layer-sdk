@@ -20,3 +20,12 @@ packages:
     interfaces:
       PingServiceClient:
       PingServiceServer:
+  github.com/synternet/data-layer-sdk/pkg/rpc:
+    config:
+      filename: "mock_{{.InterfaceName}}.go"
+      dir: "{{.InterfaceDir}}"
+      mockname: "Mock{{.InterfaceName}}"
+      outpkg: "{{.PackageName}}"
+      inpackage: True
+    interfaces:
+      Publisher:

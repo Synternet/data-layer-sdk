@@ -1,0 +1,56 @@
+syntax = "proto3";
+package example.v1;
+option go_package = "github.com/synternet/data-layer-sdk/examples/rpc/types/v1";
+
+import "synternet/rpc/options.proto";
+import "synternet/rpc/error.proto";
+import "google/protobuf/empty.proto";
+
+service UserService {
+  option (synternet.rpc.subject_prefix) = "users";
+
+  rpc Add(AddRequest) returns (AddResponse) {
+    option (synternet.rpc.subject_suffix) = "service.add";
+  }
+  rpc Get(GetRequest) returns (GetResponse) {
+    option (synternet.rpc.subject_suffix) = "service.get";
+  }
+  rpc Registrations(google.protobuf.Empty) returns (RegistrationsResponse) {
+    option (synternet.rpc.subject_suffix) = "registrations";
+    option (synternet.rpc.disable_inputs) = true;
+  }
+}
+
+message AddRequest {
+  string name = 1;
+  string surname = 2;
+}
+
+message AddResponse {
+  oneof result {
+    User user = 1;
+    synternet.rpc.Error error = 2;
+  }
+}
+
+
+message GetRequest {
+  uint64 id = 1;
+}
+
+message GetResponse {
+  oneof Result {
+    User user = 1;
+    synternet.rpc.Error error = 2;
+  }
+}
+
+message RegistrationsResponse {
+  User user = 1;
+}
+
+message User {
+  uint64 id = 1;
+  string name = 2;
+  string surname = 3;
+}
